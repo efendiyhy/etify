@@ -77,6 +77,8 @@
   --panelElevatedBG: #f3f0fa;
   --cardHoverBG: #f0ecf9;
   --panelRadius: 8px;
+  --scrollThumb: rgb(0 0 0 / 0.2);
+  --scrollThumbHover: rgb(0 0 0 / 0.45);
   --topBarHeight: 64px;
   --playerBarHeight: 76px;
 
@@ -171,6 +173,8 @@
     --panelBG: #121212;
     --panelElevatedBG: #1f1f1f;
     --cardHoverBG: #1c1a22;
+    --scrollThumb: rgb(255 255 255 / 0.18);
+    --scrollThumbHover: rgb(255 255 255 / 0.5);
 
     --systemPrimary: #ffffffeb;
     --systemSecondary: #ffffffa3;

@@ -87,7 +87,7 @@ export function AppShell() {
           <Sidebar />
           <main
             id="scrollable-page"
-            className="relative overflow-x-hidden overflow-y-auto bg-panel [scrollbar-width:thin] data-tint:bg-(--page-tint) data-tint:transition-[background-color] data-tint:duration-300 data-tint:ease-in sm:rounded-panel max-sm:absolute max-sm:inset-0 max-sm:pt-(--mobile-top-bar-height)"
+            className="relative overflow-x-hidden overflow-y-auto bg-panel scrollbar-soft data-tint:bg-(--page-tint) data-tint:transition-[background-color] data-tint:duration-300 data-tint:ease-in sm:rounded-panel max-sm:absolute max-sm:inset-0 max-sm:pt-(--mobile-top-bar-height)"
           >
             {/* The panel's top glow, in the key colour, as the page's own backdrop. */}
             <div className="pointer-events-none absolute inset-x-0 top-0 h-[320px] bg-[linear-gradient(180deg,rgba(var(--keyColor-rgb),0.30),transparent)]" aria-hidden="true" />

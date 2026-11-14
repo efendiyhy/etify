@@ -20,6 +20,7 @@ import { useLibraryPlaylists, useSignedIn } from '@/data/music/queries';
 import { useSpotifyPlaylists } from '@/data/spotify/queries';
 import { useExtensionUpdate } from '@/extension/useExtensionUpdate';
 import { useSpotifySignedIn } from '@/extension/useSpotifyAuth';
+import { useYtAuth } from '@/extension/useYtAuth';
 import { useUi } from '@/state/ui';
 import { AccountButton } from './AccountButton';
 
@@ -158,56 +159,73 @@ export function Sidebar() {
   const signedIn = useSignedIn();
   const spotifySignedIn = useSpotifySignedIn();
   const close = () => setDrawerOpen(false);
+  // The account row only when there is an account control to show; on a phone it also holds Settings.
+  const hasAccount = useYtAuth().state === 'ready';
 
   return (
     <>
       <nav
-        className="relative flex min-h-0 flex-col overflow-hidden rounded-panel bg-panel max-sm:absolute max-sm:inset-y-0 max-sm:left-0 max-sm:z-(--z-web-chrome) max-sm:w-[min(300px,82vw)] max-sm:-translate-x-full max-sm:rounded-none max-sm:shadow-glass max-sm:transition-transform max-sm:duration-(--duration-panel) max-sm:ease-panel max-sm:data-[open=true]:translate-none"
+        className="relative flex min-h-0 flex-col gap-2 max-sm:absolute max-sm:inset-y-0 max-sm:left-0 max-sm:z-(--z-web-chrome) max-sm:w-[min(300px,82vw)] max-sm:-translate-x-full max-sm:bg-canvas max-sm:p-2 max-sm:shadow-glass max-sm:transition-transform max-sm:duration-(--duration-panel) max-sm:ease-panel max-sm:data-[open=true]:translate-none"
         data-open={drawerOpen}
         aria-label="Main"
       >
-        {/* On a phone the drawer carries the mark the top bar carries on a wider screen. */}
-        <div className="hidden h-16 items-center px-5 max-sm:flex">
-          <PrefetchLink to="/home" className="inline-flex items-center gap-2 rounded-[6px]" aria-label="Etify, Home" onClick={close}>
-            <LogoMark size={26} className="text-key" />
-            <span className="type-[800_19px/24px] tracking-[-0.02em]">Etify</span>
-          </PrefetchLink>
-        </div>
-        <div className="flex items-center gap-2 px-4 pt-4 pb-1 text-secondary">
-          <Library size={24} strokeWidth={2} />
-          <h2 className="type-body-emphasized">Your Library</h2>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2 [scrollbar-width:thin]">
-          <div className="mt-2">
-            <NavList items={PRIMARY} onNavigate={close} />
+        {/* The library: its own panel, scrolling inside. */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-panel bg-panel">
+          {/* On a phone the drawer carries the mark the top bar carries on a wider screen. */}
+          <div className="hidden h-16 items-center px-5 max-sm:flex">
+            <PrefetchLink to="/home" className="inline-flex items-center gap-2 rounded-[6px]" aria-label="Etify, Home" onClick={close}>
+              <LogoMark size={26} className="text-key" />
+              <span className="type-[800_19px/24px] tracking-[-0.02em]">Etify</span>
+            </PrefetchLink>
           </div>
-          {signedIn && <LibraryNav onNavigate={close} />}
-          {spotifySignedIn && <SpotifyNav onNavigate={close} />}
-        </div>
-        <div className="flex flex-col gap-2 border-t border-quinary px-4 pt-3 pb-4">
-          {/* In the top bar on a wider screen. */}
-          <PrefetchNavLink to="/extension" className={`${item} sm:hidden`} onClick={close}>
-            <span className={icon}>
-              <MdOutlineExtension size={18} />
-            </span>
-            <span className={navLabel}>Etify Extension</span>
-            {update.state === 'available' && (
-              <span className="ml-auto rounded-[10px] bg-key px-[7px] py-0.5 type-subhead-emphasized text-white" title={`Version ${update.latest.version} is available`}>
-                Update
+          <div className="flex items-center gap-2 px-4 pt-4 pb-1 text-secondary">
+            <Library size={24} strokeWidth={2} />
+            <h2 className="type-body-emphasized">Your Library</h2>
+          </div>
+          <div className="scrollbar-soft min-h-0 flex-1 overflow-y-auto pr-0.5 pb-2 pl-2">
+            <div className="mt-2">
+              <NavList items={PRIMARY} onNavigate={close} />
+            </div>
+            {signedIn && <LibraryNav onNavigate={close} />}
+            {spotifySignedIn && <SpotifyNav onNavigate={close} />}
+          </div>
+          <div className={`flex flex-col gap-2 border-t border-quinary px-4 py-3 ${hasAccount ? '' : 'sm:hidden'}`}>
+            {/* In the top bar on a wider screen. */}
+            <PrefetchNavLink to="/extension" className={`${item} sm:hidden`} onClick={close}>
+              <span className={icon}>
+                <MdOutlineExtension size={18} />
               </span>
-            )}
-          </PrefetchNavLink>
-          <AccountButton />
-          <div className="flex items-center justify-between">
-            <a className="inline-flex items-center gap-1 type-callout text-secondary hover:text-primary hover:underline" href="https://ek-instrumentation.com" target="_blank" rel="noreferrer">
-              <span>Developed by EK-Instrumentation</span>
-              <ArrowUpRight size={14} strokeWidth={2} />
-            </a>
-            <PrefetchNavLink to="/settings" className="grid size-7 place-items-center rounded-nav text-secondary hover:bg-quinary hover:text-primary aria-[current=page]:bg-quinary aria-[current=page]:text-primary sm:hidden" aria-label="Settings" title="Settings" onClick={close}>
-              <Settings size={17} strokeWidth={1.9} />
+              <span className={navLabel}>Etify Extension</span>
+              {update.state === 'available' && (
+                <span className="ml-auto rounded-[10px] bg-key px-[7px] py-0.5 type-subhead-emphasized text-white" title={`Version ${update.latest.version} is available`}>
+                  Update
+                </span>
+              )}
             </PrefetchNavLink>
+            <div className="flex min-h-7 items-center justify-between gap-2">
+              <AccountButton />
+              <PrefetchNavLink to="/settings" className="ml-auto grid size-7 flex-none place-items-center rounded-nav text-secondary hover:bg-quinary hover:text-primary aria-[current=page]:bg-quinary aria-[current=page]:text-primary sm:hidden" aria-label="Settings" title="Settings" onClick={close}>
+                <Settings size={17} strokeWidth={1.9} />
+              </PrefetchNavLink>
+            </div>
           </div>
         </div>
+
+        {/* The credit: a small panel of its own under the library. */}
+        <a
+          className="group/credit flex flex-none items-center gap-3 rounded-panel bg-panel px-4 py-3 transition-colors hover:bg-panel-elevated"
+          href="https://ek-instrumentation.com"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="type-[500_11px/14px] tracking-[0.04em] text-tertiary uppercase">Developed by</span>
+            <span className="truncate type-body-emphasized text-primary">EK-Instrumentation</span>
+          </span>
+          <span className="grid size-8 flex-none place-items-center rounded-full bg-panel-elevated text-secondary transition-colors group-hover/credit:bg-key-bg group-hover/credit:text-white">
+            <ArrowUpRight size={16} strokeWidth={2.2} />
+          </span>
+        </a>
       </nav>
       {drawerOpen && <div className="absolute inset-0 z-[calc(var(--z-web-chrome)-1)] hidden bg-scrim max-sm:block" onClick={close} aria-hidden="true" />}
     </>

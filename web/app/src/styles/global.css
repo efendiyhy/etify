@@ -218,6 +218,43 @@
 }
 
 /* Glass (report §1): the sidebar, the side panel and the phone's top bar. */
+/*
+ * A quiet overlay-style scrollbar for the panels: no arrow buttons, a thin
+ * rounded thumb on a clear track, brighter under the pointer. Chromium and Safari draw it from the ::-webkit-scrollbar parts
+ * (which Chromium ignores once scrollbar-width/-color are set, so those are
+ * only given to browsers without the parts, i.e. Firefox).
+ */
+@utility scrollbar-soft {
+  &::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  &::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  &::-webkit-scrollbar-track,
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-color: var(--scrollThumb);
+    background-clip: padding-box;
+    min-height: 40px;
+  }
+  &::-webkit-scrollbar-thumb:hover,
+  &::-webkit-scrollbar-thumb:active {
+    background-color: var(--scrollThumbHover);
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollThumb) transparent;
+  }
+}
+
 @utility glass-material {
   background-color: var(--glassMaterialBackground);
   backdrop-filter: var(--glassMaterialBackdropFilter);
