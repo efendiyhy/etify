@@ -1,145 +1,137 @@
 <div align="center">
 
-<br/>
-<br/>
-
-<img src="Logo.png" alt="Etify app icon" width="200" />
+<img src="Logo.png" alt="Logo Etify: kepala kucing yang menjadi not balok" width="160" />
 
 # Etify
 
-### Aesthetic YouTube Music Client
+**Pemutar musik YouTube yang lebih indah, di semua perangkatmu.**
 
-<br/>
+[![Rilis terbaru](https://img.shields.io/github/v/release/efendiyhy/etify?style=for-the-badge&labelColor=0d1117&color=FA233B)](https://github.com/efendiyhy/etify/releases)
+[![Lisensi](https://img.shields.io/github/license/efendiyhy/etify?style=for-the-badge&labelColor=0d1117&color=FA233B)](LICENSE)
 
-[![Latest release](https://img.shields.io/github/v/release/efendiyhy/etify?style=for-the-badge&labelColor=0d1117)](https://github.com/efendiyhy/etify/releases)
-[![License](https://img.shields.io/github/license/efendiyhy/etify?style=for-the-badge&labelColor=0d1117)](https://github.com/efendiyhy/etify/blob/main/LICENSE)
-[![Downloads](https://img.shields.io/github/downloads/efendiyhy/etify/total?style=for-the-badge&labelColor=0d1117)](https://github.com/efendiyhy/etify/releases)
+[Unduh](#unduh) · [Fitur](#fitur) · [Platform](#platform) · [Build sendiri](#build-dari-source) · [Kredit](#kredit) · [Lisensi](#lisensi)
 
-<br/>
-
-[**Download**](#download) · [**Features**](#features) · [**Contributing**](#contributing) · [**Credits**](#credits) · [**Disclaimer**](#disclaimer)
+<img src="Banner.png" alt="Banner Etify" width="100%" />
 
 </div>
 
 > [!IMPORTANT]
-> Etify is not affiliated with, endorsed by, or connected to YouTube or Google in any way. Use it at your own discretion.
+> Etify adalah klien pihak ketiga yang independen. Etify tidak berafiliasi dengan, tidak didukung oleh, dan tidak terhubung dengan YouTube atau Google.
 
----
+## Tentang Etify
 
-<div align="center">
+Etify adalah klien YouTube Music open-source dengan tampilan yang rapi dan audio yang serius. Satu kode dasar dipakai untuk ponsel Android, Android TV, jam Wear OS, dan browser. Kamu bisa masuk dengan akun Google, menyambungkan Spotify, mendengarkan lirik yang tersinkron per kata, dan memutar musik bersama teman secara real-time.
 
-<img src="Banner.png" alt="Etify banner" width="100%" />
+## Fitur
 
-<h1><a id="features"></a>Features</h1>
+### Pemutaran
+- **Cari, jelajahi, dan putar** semua yang ada di YouTube Music.
+- **Audio lossless Hi-Res** (FLAC/ALAC) dari sumber modul yang dikonfigurasi, dengan YouTube Music sebagai cadangan.
+- **Gapless dan crossfade** yang bisa diatur dari 0 sampai 12 detik.
+- **Automix (beta)**: transisi ala DJ dengan beat-matching dan tempo-stretching.
+- **Unduhan offline** lengkap dengan metadata.
+- **Pustaka musik lokal** dan **pemutaran di latar belakang**.
+- **Output USB bit-perfect** ke DAC eksternal, sesuai sample rate dan bit depth tiap lagu.
 
-<table>
-  <tr>
-    <td width="50%" valign="top">
+### Lirik dan tampilan
+- **Lirik tersinkron per kata** dari banyak penyedia, dengan animasi yang halus.
+- **Kanvas album bergerak** di layar Now Playing.
+- **Tema dinamis** yang warnanya diambil dari sampul album.
+- **UI kaca buram** dengan Material 3.
+- **Pilihan ikon aplikasi**: glass, neon, dan monokrom.
 
-#### Playback
-- **Search, browse and play** anything available on YouTube Music.
-- **Hi-Res lossless audio** — FLAC/ALAC from a configured module source, with YouTube Music as fallback.
-- **Gapless playback with true crossfade**, adjustable 0–12s.
-- **Automix [Beta]** — DJ-style transitions with beat-matching and tempo-stretching.
-- **Offline downloads** — save tracks with embedded metadata.
-- **Local music library** integration.
-- **Background playback** via a proper foreground media session.
-- **Apple-like lyrics animation** — credit to [binimum](https://github.com/binimum/am-lyrics).
+### Akun dan koneksi
+- **Masuk dengan akun Google** untuk rekomendasi pribadi.
+- **Integrasi Spotify** untuk memutar playlist dan Liked Songs.
+- **Discord Rich Presence** dan **scrobbling** ke Last.fm serta ListenBrainz.
+- **Listen Together**: buat kode pesta 6 karakter, lalu dengarkan lagu yang sama bersama sampai 5 perangkat.
 
-#### Connectivity & Accounts
-- **Sign in with your Google account** for personalized content.
-- **Spotify integration** — connect your account to play your playlists and Liked Songs.
-- **Discord Rich Presence** — in-app login, live track/artist/album and progress.
-- **Scrobbling** to Last.fm and ListenBrainz.
-- **Pluggable sources** — add, edit, test and health-check module sources.
+### Kontrol
+- Kualitas audio terpisah untuk Wi-Fi dan data seluler.
+- Kecepatan putar 0,5× sampai 2,0×, lewati bagian hening, sleep timer, dan equalizer sistem.
+- **Stats for nerds**: codec, bit depth, sample rate, dan lainnya.
 
-    </td>
-    <td width="50%" valign="top">
+## Platform
 
-#### Experience
-- **Animated album canvas** — motion artwork on the now-playing screen.
-- **Word-synced lyrics** — word/syllable-level highlighting from multiple sources.
-- **Lyrics providers** — credit to [lrc.red](https://lrc.red), [BiniLyrics](https://github.com/binimum), [BetterLyrics](https://github.com/better-lyrics/better-lyrics), [PaxSenix](https://lyrics.paxsenix.org), [LyricsPlus](https://github.com/ibratabian17/YouLyPlus), [SimpMusic](https://github.com/maxrave-dev/SimpMusic), [Unison](https://unison.boidu.dev), [Megalobiz](https://www.megalobiz.com), [KuGou](https://www.kugou.com), [LRCLIB](https://lrclib.net), [Musixmatch](https://www.musixmatch.com) and [Genius](https://genius.com).
-- **Dynamic, artwork-driven theming** — Material palette extracted from album art.
-- **Frosted-glass UI** — Telegram-style translucent bars via Haze, Material 3 theming.
+| Platform | Folder | Teknologi |
+|---|---|---|
+| Android (ponsel) | `app/` | Kotlin, Jetpack Compose, Media3 |
+| Android TV | `tv/` | Kotlin, Compose for TV |
+| Wear OS | `wearos/` | Kotlin, Compose for Wear |
+| Web | `web/app/` | React 19, Vite, TypeScript, Tailwind CSS |
+| Ekstensi browser | `web/extension/` | WXT, Manifest V3 (Chrome, Edge, Brave, Firefox) |
+| Server Listen Together | `backend/` | Go, WebSocket |
+| Kode bersama | `shared/`, `sharedUi/`, `native/` | Kotlin Multiplatform, C++ untuk analisis audio |
 
-#### Controls & Tweaks
-- **Per-network audio quality** — separate quality ceilings for Wi-Fi and mobile data.
-- **Playback speed control** (0.5×–2.0×) and **skip silence**.
-- **Sleep timer** — fixed presets or "stop after this track".
-- **System equalizer** integration.
-- **Bit-perfect USB exclusive output** — sends lossless tracks to a USB DAC unchanged, at each track's own rate and bit depth. Thanks to [Mornye](https://github.com/mornyeapp/Mornye) for the reference.
-- **Stats for nerds** — codec, bit depth, sample rate, and more on the now-playing screen.
+## Unduh
 
-    </td>
-  </tr>
-</table>
+Ambil APK terbaru dari halaman [Releases](https://github.com/efendiyhy/etify/releases). Untuk memasangnya, izinkan "Install unknown apps" pada aplikasi yang kamu pakai untuk mengunduh.
 
-</div>
+## Build dari source
 
----
+### Aplikasi Android, TV, dan Wear OS
 
-<div align="center">
+Kebutuhan: JDK 17, Android SDK 36, NDK, dan CMake 3.22.1 atau lebih baru.
 
-<h1><a id="download"></a>Download</h1>
+```bash
+./gradlew assembleDevDebug
+```
 
-<a href="https://github.com/efendiyhy/etify/releases" target="_blank" rel="noopener noreferrer"><img src="https://cdn.jsdelivr.net/gh/JMcrafter26/badges@main/src/assets/supported/android/cozy.svg" alt="Download for Android" height="55"/></a>
+```bash
+./gradlew :tv:assembleDevDebug
+```
 
-Grab the latest signed APK from the [Releases](https://github.com/efendiyhy/etify/releases) page. Sideloading requires enabling "Install unknown apps" for whichever app you download it with.
+```bash
+./gradlew testDevDebugUnitTest
+```
 
+Untuk build rilis yang ditandatangani, salin `keystore.properties.example` menjadi `keystore.properties` lalu isi dengan keystore milikmu.
 
-</div>
+### Web dan ekstensi browser
 
----
+Kebutuhan: Node 22 atau lebih baru. pnpm sudah tersedia lewat corepack.
 
-<div align="center">
+```bash
+corepack pnpm --dir web install
+```
 
-<h1><a id="contributing"></a>Contributing</h1>
+```bash
+corepack pnpm --dir web/app dev
+```
 
-We welcome contributions to Etify! Please review our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting a Pull Request.
+Situs berjalan di `http://localhost:5173`. Panduan lengkap untuk ekstensi, konfigurasi, dan deploy ke Cloudflare Pages ada di [`web/README.md`](web/README.md).
 
-[**Contributing Guide**](CONTRIBUTING.md) · [**Code of Conduct**](CODE_OF_CONDUCT.md) · [**Maintainers**](MAINTAINERS.md) · [**Additional Docs**](ADDITIONAL.md)
+### Server Listen Together
 
-### Thanks to all contributors ❤
+```bash
+cd backend && go run .
+```
 
-<a href="https://github.com/efendiyhy/etify/graphs/contributors">
-  <img src="https://raw.githubusercontent.com/efendiyhy/etify/contributors/contributors.svg" />
-</a>
+Cara kerja sinkronisasi dan langkah deploy ada di [`backend/README.md`](backend/README.md).
 
-</div>
+### Domain
 
----
+Kode ini memakai alamat contoh `etify.example.com` (beserta `api.`, `jam.`, dan `auth.`) serta `etify.pages.dev`. Ganti semuanya dengan domain milikmu sebelum merilis.
 
-<div align="center">
+## Kontribusi
 
-<h1><a id="credits"></a>Credits</h1>
+Kontribusi sangat diterima. Baca [Panduan Kontribusi](CONTRIBUTING.md) dan [Kode Etik](CODE_OF_CONDUCT.md) sebelum membuka Pull Request. Daftar pengelola ada di [MAINTAINERS.md](MAINTAINERS.md).
 
-Etify is a fork of [**BitChord**](https://github.com/kushagrasinghx/BitChord) by Kushagra Singh and the BitChord contributors, released under the GPLv3.
-Etify has been renamed and modified by [@efendiyhy](https://github.com/efendiyhy) since November 2026. The original copyright notices in the source files are kept as the license requires.
+## Kredit
 
-</div>
+Etify adalah fork dari [**BitChord**](https://github.com/kushagrasinghx/BitChord) karya Kushagra Singh dan para kontributor BitChord, yang dirilis di bawah GPLv3. Sejak November 2026, Etify diubah nama, diberi logo baru, dan dimodifikasi oleh [@efendiyhy](https://github.com/efendiyhy). Keterangan hak cipta asli di dalam file source tetap dipertahankan, sesuai ketentuan lisensi.
 
----
+Terima kasih juga kepada:
+- [binimum/am-lyrics](https://github.com/binimum/am-lyrics) untuk animasi lirik.
+- Penyedia lirik: [lrc.red](https://lrc.red), [BetterLyrics](https://github.com/better-lyrics/better-lyrics), [PaxSenix](https://lyrics.paxsenix.org), [LyricsPlus](https://github.com/ibratabian17/YouLyPlus), [SimpMusic](https://github.com/maxrave-dev/SimpMusic), [Unison](https://unison.boidu.dev), [Megalobiz](https://www.megalobiz.com), [KuGou](https://www.kugou.com), [LRCLIB](https://lrclib.net), [Musixmatch](https://www.musixmatch.com), dan [Genius](https://genius.com).
+- [Mornye](https://github.com/mornyeapp/Mornye) sebagai referensi output USB bit-perfect.
 
-<div align="center">
+## Disclaimer
 
-<h1><a id="disclaimer"></a>Disclaimer & Legal Notice</h1>
+- Etify **tidak menyimpan atau meng-hosting** file musik berhak cipta. Etify hanya menjadi antarmuka untuk penyimpanan lokal dan API publik atau API yang diakses dengan akun penggunanya sendiri.
+- Perangkat lunak ini dibuat untuk penggunaan pribadi dan edukasi. Pengguna bertanggung jawab memastikan pemakaiannya sesuai hukum hak cipta setempat dan Ketentuan Layanan YouTube.
+- Etify tidak berafiliasi dengan Google LLC, YouTube Music, Spotify, Deezer, Telegram, maupun perusahaan induknya.
 
-Etify is an independent, community-driven third-party audio player and client. It is **not** associated with Google LLC, YouTube Music, Deezer, Telegram, or any of their parent companies.
+## Lisensi
 
-* **No Media Hosting:** Etify does not host, upload, or store copyrighted music files. It operates strictly as an interface to scan local device storage or stream media directly from public, public-facing, or user-authenticated APIs.
-* **Fair Use & API Usage:** This software is created solely for personal research, educational, and fair-use purposes. The user is entirely responsible for ensuring their usage aligns with their local copyright laws and YouTube Terms of Service.
-* **No Ad-Blocking Guarantee:** While Etify focuses on providing a clean listening environment, it does not guarantee permanent bypasses or modifications to commercial third-party platform conditions.
-* **Copyleft:** Etify is free software under the GPLv3. The license does not let anyone forbid others from selling or redistributing copies, but any distribution must come with the Corresponding Source under the same license.
-
-</div>
-
----
-
-<div align="center">
-
-<h1><a id="license"></a>License</h1>
-
-This project is licensed under the **GNU General Public License v3.0 (GPLv3)**. See the [LICENSE](LICENSE) file for details.
-
-</div>
+Etify adalah perangkat lunak bebas di bawah **GNU General Public License v3.0**. Siapa pun boleh memakai, mengubah, dan menyebarkannya, asalkan setiap distribusi menyertakan source code lengkapnya di bawah lisensi yang sama. Lihat [LICENSE](LICENSE).
