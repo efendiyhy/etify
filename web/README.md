@@ -69,6 +69,18 @@ Then open `http://localhost:5173/extension`. It shows "Installed", with the vers
 
 The site is hosted on Firebase project `etify-3c7ec` (`web/.firebaserc`), at `https://etify-3c7ec.web.app`. `web/firebase.json` serves `app/dist`, sends every path to `index.html` so React Router can handle it, and caches the hashed `assets/` for a year.
 
+### Automatic deploy (GitHub Actions)
+
+`.github/workflows/deploy-web.yml` builds and deploys on every push to `main` that touches `web/`, and can be started by hand from the Actions tab. It needs one repository secret:
+
+1. Firebase console → Project settings → Service accounts → **Generate new private key** (or, in Google Cloud IAM, a service account with the *Firebase Hosting Admin* role).
+2. GitHub → Settings → Secrets and variables → Actions → **New repository secret**: name `FIREBASE_SERVICE_ACCOUNT`, value the whole JSON file.
+3. Optional: a repository *variable* `PARTY_SERVER_URL` with the Listen Together server's URL.
+
+Without the secret the workflow builds the site and skips the deploy.
+
+### Manual deploy
+
 One-time setup:
 
 ```bash

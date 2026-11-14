@@ -1,0 +1,66 @@
+name: Deploy web
+
+# Builds the web player and its extension downloads, then publishes them to
+# Firebase Hosting (project etify-3c7ec, https://etify-3c7ec.web.app).
+#
+# Needs the repository secret FIREBASE_SERVICE_ACCOUNT: the JSON key of a
+# service account with the "Firebase Hosting Admin" role. Without it the
+# build still runs and the deploy step is skipped with a notice.
+#
+# Optional repository variable PARTY_SERVER_URL: the Listen Together server.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy to Firebase Hosting
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    env:
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Packages the extension zips into app/public/downloads, then builds the site.
+      - name: Build
+        run: pnpm build:site
+        env:
+          VITE_PARTY_SERVER_URL: ${{ vars.PARTY_SERVER_URL || 'https://jam.etify.example.com' }}
+
+      - name: Deploy to Firebase Hosting
+        if: env.FIREBASE_SERVICE_ACCOUNT != ''
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: etify-3c7ec
+          channelId: live
+          entryPoint: web
+
+      - name: Deploy skipped
+        if: env.FIREBASE_SERVICE_ACCOUNT == ''
+        run: echo "::notice::FIREBASE_SERVICE_ACCOUNT is not set, so the site was built but not deployed. See web/README.md."
