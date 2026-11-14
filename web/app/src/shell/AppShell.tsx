@@ -16,6 +16,7 @@ import { MobileTopBar } from './MobileTopBar';
 import { PlayerBar } from './PlayerBar';
 import { SidePanel } from './SidePanel';
 import { Sidebar } from './Sidebar';
+import { TopBar } from './TopBar';
 
 const mobile = isMobileBrowser();
 
@@ -23,8 +24,9 @@ const mobile = isMobileBrowser();
 const FullScreenPlayer = lazy(() => import('./FullScreenPlayer').then((m) => ({ default: m.FullScreenPlayer })));
 
 /**
- * The app frame (report §1): glass sidebar, the scrolling page, the floating
- * player pill, the side panel, and the bottom band when there is one.
+ * The app frame: the top bar, the library, the scrolling page and the side
+ * panel as panels, the player bar along the bottom, and the band under it
+ * when there is one.
  */
 export function AppShell() {
   useKeyboardShortcuts();
@@ -72,24 +74,31 @@ export function AppShell() {
   }
 
   return (
-    <div className="grid h-full grid-rows-[minmax(0,1fr)_auto]">
-      {/* The side panel slides in from beyond the right edge; never let it scroll the page. */}
-      <div className="relative min-h-0 overflow-hidden">
-        <Sidebar />
+    <div className="grid h-full grid-rows-[minmax(0,1fr)_auto_auto] bg-canvas">
+      {/*
+        The panelled frame: a bar across the top, then the library, the page and
+        (when open) the side panel as rounded panels on the canvas, 8px apart.
+        On a phone the sidebar is a drawer and the page fills the screen.
+      */}
+      <div className="relative grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:px-2 max-sm:block">
+        <TopBar />
         <MobileTopBar />
-        {/* The page scrolls under the fixed sidebar and the floating player. */}
-        <main
-          id="scrollable-page"
-          className="absolute inset-0 overflow-x-hidden overflow-y-auto pl-(--web-navigation-width) [scrollbar-gutter:stable] data-tint:bg-(--page-tint) data-tint:transition-[background-color] data-tint:duration-300 data-tint:ease-in max-sm:pt-(--mobile-top-bar-height) max-sm:pl-0"
-        >
-          {/* Clears the floating pill: its height, its offset, and some air. */}
-          <div className="min-h-full pb-[calc(var(--player-pill-height)+var(--player-bottom-offset)+40px)]">
-            <Outlet />
-          </div>
-        </main>
-        <PlayerBar />
-        <SidePanel />
+        <div className="relative grid min-h-0 gap-2 sm:grid-cols-[var(--web-navigation-width)_minmax(0,1fr)_auto] max-sm:block max-sm:h-full">
+          <Sidebar />
+          <main
+            id="scrollable-page"
+            className="relative overflow-x-hidden overflow-y-auto bg-panel [scrollbar-width:thin] data-tint:bg-(--page-tint) data-tint:transition-[background-color] data-tint:duration-300 data-tint:ease-in sm:rounded-panel max-sm:absolute max-sm:inset-0 max-sm:pt-(--mobile-top-bar-height)"
+          >
+            {/* The panel's top glow, in the key colour, as the page's own backdrop. */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-[320px] bg-[linear-gradient(180deg,rgba(var(--keyColor-rgb),0.30),transparent)]" aria-hidden="true" />
+            <div className="relative min-h-full pb-10">
+              <Outlet />
+            </div>
+          </main>
+          <SidePanel />
+        </div>
       </div>
+      <PlayerBar />
       {banner}
       {fullScreen && (
         <Suspense fallback={null}>

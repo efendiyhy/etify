@@ -15,18 +15,18 @@ import { FavoriteButton } from '@/components/music/FavoriteButton';
 import { TrackMenu } from '@/components/music/TrackMenu';
 import { usePlayer } from '@/state/player';
 import { useUi } from '@/state/ui';
-import { Lcd } from './Lcd';
+import { NowPlayingTrack, SeekBar } from './NowPlayingBar';
 import { fadeForVolume, VolumeControl } from './VolumeControl';
 
-const control = 'grid place-items-center rounded-[6px] disabled:opacity-40';
-// Shuffle and repeat: secondary, and the key colour when on, as Apple's toggles.
-const toggle = `${control} size-7 text-secondary aria-pressed:text-key`;
-const transport = `${control} size-7 text-primary`;
-const action = 'grid h-7 w-6 place-items-center rounded-[4px] text-primary aria-pressed:text-key';
+const control = 'grid place-items-center rounded-full transition-[color,transform] disabled:opacity-40';
+// Shuffle and repeat: secondary, and the key colour (with a dot under) when on.
+const toggle = `${control} relative size-8 text-secondary hover:text-primary aria-pressed:text-key aria-pressed:after:absolute aria-pressed:after:bottom-0 aria-pressed:after:size-1 aria-pressed:after:rounded-full aria-pressed:after:bg-key`;
+const transport = `${control} size-8 text-secondary hover:text-primary enabled:hover:scale-[1.06]`;
+const action = 'grid size-8 place-items-center rounded-full text-secondary hover:text-primary aria-pressed:text-key';
 // The actions the volume level slides in over: they fade out while it's open.
 const fading = `${action} ${fadeForVolume}`;
 
-/** The floating glass player pill (report §1). */
+/** The player along the bottom: what's playing, the transport over the seek line, and the actions. */
 export function PlayerBar() {
   const sidePanel = useUi((s) => s.sidePanel);
   const toggleSidePanel = useUi((s) => s.toggleSidePanel);
@@ -45,69 +45,67 @@ export function PlayerBar() {
   const [volumeOpen, setVolumeOpen] = useState(false);
 
   return (
-    // The side panel overlays the page; the pill re-centres in what's left.
     <div
-      className="pointer-events-none absolute right-0 bottom-(--player-bottom-offset) left-(--web-navigation-width) z-[calc(var(--z-web-chrome)-1)] flex justify-center px-5 transition-[padding-inline-end] duration-(--duration-panel) ease-panel data-[panel-open=true]:pe-[calc(var(--side-panel-width)+20px)] max-sm:hidden"
-      data-panel-open={sidePanel !== null}
+      className="z-[calc(var(--z-web-chrome)-1)] grid h-(--playerBarHeight) grid-cols-[minmax(180px,1fr)_minmax(320px,2fr)_minmax(180px,1fr)] items-center gap-4 bg-canvas px-4 max-sm:hidden"
+      role="region"
+      aria-label="Player"
     >
-      <div
-        className="glass-pill group/pill pointer-events-auto relative grid h-(--player-pill-height) w-[min(668px,100%)] grid-cols-[184px_minmax(180px,427px)_minmax(57px,auto)] items-center rounded-pill px-4"
-        role="region"
-        aria-label="Player"
-      >
-        <div className="flex items-center justify-between pr-2">
+      <div className="flex min-w-0 items-center gap-2">
+        <NowPlayingTrack />
+        <FavoriteButton videoId={videoId} className={`${action} flex-none`} />
+      </div>
+
+      <div className="flex min-w-0 flex-col items-center gap-1">
+        <div className="flex items-center gap-4">
           <button className={toggle} aria-label="Shuffle" aria-pressed={shuffle} onClick={toggleShuffle}>
-            <ShuffleIcon size={28} />
+            <ShuffleIcon size={24} />
           </button>
-          <div className="flex items-center gap-1.5">
-            <button className={transport} disabled={!hasTrack} aria-label="Previous" onClick={previous}>
-              <BackwardIcon size={26} />
-            </button>
-            <button className={transport} disabled={!hasTrack} aria-label={playing ? 'Pause' : 'Play'} onClick={togglePlay}>
-              {playing ? <PauseIcon size={28} /> : <PlayIcon size={28} />}
-            </button>
-            <button className={transport} disabled={!hasTrack || !hasNext} aria-label="Next" onClick={next}>
-              <ForwardIcon size={26} />
-            </button>
-          </div>
+          <button className={transport} disabled={!hasTrack} aria-label="Previous" onClick={previous}>
+            <BackwardIcon size={24} />
+          </button>
+          {/* The one filled control: a round button in the label colour, as the bar's centre. */}
+          <button
+            className={`${control} size-9 bg-primary text-page enabled:hover:scale-[1.06]`}
+            disabled={!hasTrack}
+            aria-label={playing ? 'Pause' : 'Play'}
+            onClick={togglePlay}
+          >
+            {playing ? <PauseIcon size={22} /> : <PlayIcon size={22} />}
+          </button>
+          <button className={transport} disabled={!hasTrack || !hasNext} aria-label="Next" onClick={next}>
+            <ForwardIcon size={24} />
+          </button>
           <button
             className={toggle}
             aria-label={repeat === 'one' ? 'Repeat one' : repeat === 'all' ? 'Repeat all' : 'Repeat'}
             aria-pressed={repeat !== 'off'}
             onClick={cycleRepeat}
           >
-            {repeat === 'one' ? <RepeatOneIcon size={28} /> : <RepeatIcon size={28} />}
+            {repeat === 'one' ? <RepeatOneIcon size={24} /> : <RepeatIcon size={24} />}
           </button>
         </div>
+        <div className="w-full max-w-[640px]">
+          <SeekBar />
+        </div>
+      </div>
 
-        <div className="h-full min-w-0 px-4">
-          <Lcd />
-        </div>
-
-        <div
-          className="group/actions relative flex items-center justify-end gap-[9px]"
-          data-volume-open={volumeOpen || undefined}
-          onPointerLeave={() => setVolumeOpen(false)}
-          onBlur={(e) => {
-            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setVolumeOpen(false);
-          }}
-        >
-          <FavoriteButton videoId={videoId} className={fading} />
-          {track && <TrackMenu track={track} className={fading} placement="above-end" />}
-          {/* Always here: the panel itself says whether this track has lyrics, and from where. */}
-          <button className={fading} aria-label="Lyrics" aria-pressed={sidePanel === 'lyrics'} onClick={() => toggleSidePanel('lyrics')}>
-            {sidePanel === 'lyrics' ? <LyricsActiveIcon size={18} /> : <LyricsIcon size={18} />}
-          </button>
-          <button
-            className={fading}
-            aria-label="Up Next"
-            aria-pressed={sidePanel === 'up-next'}
-            onClick={() => toggleSidePanel('up-next')}
-          >
-            <UpNextIcon size={18} />
-          </button>
-          <VolumeControl open={volumeOpen} onOpen={() => setVolumeOpen(true)} className={action} />
-        </div>
+      <div
+        className="group/actions relative flex items-center justify-end gap-1"
+        data-volume-open={volumeOpen || undefined}
+        onPointerLeave={() => setVolumeOpen(false)}
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setVolumeOpen(false);
+        }}
+      >
+        {track && <TrackMenu track={track} className={fading} placement="above-end" />}
+        {/* Always here: the panel itself says whether this track has lyrics, and from where. */}
+        <button className={fading} aria-label="Lyrics" aria-pressed={sidePanel === 'lyrics'} onClick={() => toggleSidePanel('lyrics')}>
+          {sidePanel === 'lyrics' ? <LyricsActiveIcon size={18} /> : <LyricsIcon size={18} />}
+        </button>
+        <button className={fading} aria-label="Up Next" aria-pressed={sidePanel === 'up-next'} onClick={() => toggleSidePanel('up-next')}>
+          <UpNextIcon size={18} />
+        </button>
+        <VolumeControl open={volumeOpen} onOpen={() => setVolumeOpen(true)} className={action} />
       </div>
     </div>
   );

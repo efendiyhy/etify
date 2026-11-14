@@ -81,20 +81,24 @@ export function ShelfScroller({ kind, children }: { kind: ShelfKind; children: R
   );
 }
 
-/** A shelf's title, a link with a chevron when there's a page behind it. */
+/** A shelf's title, with "Show all" at the far end when there's a page behind it. */
 function ShelfTitle({ title, to }: { title: string; to?: string | null }) {
   return (
-    <div className={shelfHeader}>
-      <h2 className="type-title-2-emphasized">
+    <div className={`${shelfHeader} justify-between gap-4`}>
+      <h2 className="min-w-0 truncate type-title-2-emphasized">
         {to ? (
-          <PrefetchLink to={to} className="group/title inline-flex items-center gap-0.5">
+          <PrefetchLink to={to} className="hover:underline">
             {title}
-            <ChevronRight size={18} strokeWidth={2.6} className="text-secondary group-hover/title:text-primary" />
           </PrefetchLink>
         ) : (
           title
         )}
       </h2>
+      {to && (
+        <PrefetchLink to={to} className="flex-none type-callout-emphasized text-secondary hover:text-primary hover:underline">
+          Show all
+        </PrefetchLink>
+      )}
     </div>
   );
 }

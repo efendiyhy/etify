@@ -27,7 +27,7 @@ export const shelfKinds: Record<ShelfKind, string> = {
   // A
   editorial: '[--rows:1] [--row-gap:24px] [--xs-width:298px] [--cols-s:2] [--cols-m:2] [--cols-l:3] [--cols-xl:3]',
   // G
-  square: '[--rows:1] [--row-gap:24px] [--xs-width:144px] [--cols-s:4] [--cols-m:5] [--cols-l:6] [--cols-xl:6]',
+  square: '[--rows:1] [--row-gap:24px] [--xs-width:150px] [--cols-s:5] [--cols-m:6] [--cols-l:7] [--cols-xl:8]',
   // TrackLockupsShelf
   tracks: '[--rows:4] [--row-gap:0px] [--xs-width:270px] [--cols-s:2] [--cols-m:3] [--cols-l:4] [--cols-xl:4]',
   // B

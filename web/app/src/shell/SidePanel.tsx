@@ -5,7 +5,7 @@ import { UpNext } from './UpNext';
 // am-lyrics is large; it loads the first time the panel opens (prompt §3).
 const LyricsPanel = lazy(() => import('./LyricsPanel').then((m) => ({ default: m.LyricsPanel })));
 
-/** Up Next / Lyrics glass panel (report §7). */
+/** Up Next / Lyrics, a panel beside the page. */
 export function SidePanel() {
   const panel = useUi((s) => s.sidePanel);
   // Hidden under the full-screen player, which has its own lyrics: one am-lyrics at a time.
@@ -14,7 +14,7 @@ export function SidePanel() {
 
   return (
     <aside
-      className="absolute inset-y-0 right-0 z-(--z-web-chrome) flex w-(--side-panel-width) animate-slide-in flex-col glass-material shadow-glass max-sm:w-full"
+      className="relative z-(--z-web-chrome) flex min-h-0 w-(--side-panel-width) animate-fade flex-col overflow-hidden rounded-panel bg-panel max-sm:absolute max-sm:inset-0 max-sm:w-full max-sm:rounded-none"
       aria-label={panel === 'up-next' ? 'Up Next' : 'Lyrics'}
     >
       {panel === 'up-next' ? (

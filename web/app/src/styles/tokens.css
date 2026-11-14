@@ -35,11 +35,11 @@
   --footnote: 400 11px / 14px var(--font-family);
 
   /* ---- Layout ------------------------------------------------------------ */
-  --web-navigation-width: 260px;
+  --web-navigation-width: 300px;
   --body-gutter: 25px;
   --player-pill-height: 56px;
   --player-bottom-offset: 20px;
-  --side-panel-width: 300px;
+  --side-panel-width: 340px;
   --mobile-top-bar-height: 52px;
   --mini-player-height: 52px;
 
@@ -70,6 +70,15 @@
 
   --pageBG: #ffffff;
   --pageBG-rgb: 255, 255, 255;
+
+  /* The panelled frame: panels sit on the canvas, 8px apart. */
+  --canvasBG: #e9e5f4;
+  --panelBG: #ffffff;
+  --panelElevatedBG: #f3f0fa;
+  --cardHoverBG: #f0ecf9;
+  --panelRadius: 8px;
+  --topBarHeight: 64px;
+  --playerBarHeight: 76px;
 
   --systemPrimary: #000000e0;
   --systemSecondary: #0000008f;
@@ -155,8 +164,13 @@
   :root {
     color-scheme: dark;
 
-    --pageBG: #1f1f1f;
-    --pageBG-rgb: 31, 31, 31;
+    --pageBG: #121212;
+    --pageBG-rgb: 18, 18, 18;
+
+    --canvasBG: #000000;
+    --panelBG: #121212;
+    --panelElevatedBG: #1f1f1f;
+    --cardHoverBG: #1c1a22;
 
     --systemPrimary: #ffffffeb;
     --systemSecondary: #ffffffa3;

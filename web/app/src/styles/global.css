@@ -117,6 +117,10 @@
   --color-black: #000;
 
   --color-page: var(--pageBG);
+  --color-canvas: var(--canvasBG);
+  --color-panel: var(--panelBG);
+  --color-panel-elevated: var(--panelElevatedBG);
+  --color-card-hover: var(--cardHoverBG);
   --color-primary: var(--systemPrimary);
   --color-secondary: var(--systemSecondary);
   --color-tertiary: var(--systemTertiary);
@@ -173,6 +177,7 @@
   --radius-nav: var(--radius-nav-item);
   --radius-row: var(--radius-track-row);
   --radius-pill: 1000px;
+  --radius-panel: var(--panelRadius);
   --radius-full: 50%;
 
   --ease-panel: var(--ease-out-panel);
@@ -319,7 +324,7 @@
   body {
     font: var(--body);
     color: var(--systemPrimary);
-    background-color: var(--pageBG);
+    background-color: var(--canvasBG);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;

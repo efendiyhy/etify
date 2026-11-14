@@ -15,7 +15,17 @@ type Option = { kind: 'query'; text: string; typed: string; rest: string } | { k
  * a glass dropdown of completions, then artist, album and song suggestions.
  * Arrow keys move through it; Enter picks; Escape closes.
  */
-export function SearchField({ initial, onSearch }: { initial: string; onSearch: (query: string) => void }) {
+export function SearchField({
+  initial,
+  onSearch,
+  variant = 'field',
+}: {
+  initial: string;
+  onSearch: (query: string) => void;
+  /** `pill`: the top bar's larger rounded search, on the panel colour. */
+  variant?: 'field' | 'pill';
+}) {
+  const pill = variant === 'pill';
   const [value, setValue] = useState(initial);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -58,7 +68,7 @@ export function SearchField({ initial, onSearch }: { initial: string; onSearch: 
   };
 
   return (
-    <div className="relative w-[min(492px,100%)]">
+    <div className={pill ? 'relative w-full max-w-[480px]' : 'relative w-[min(492px,100%)]'}>
       <form
         className="relative flex items-center"
         role="search"
@@ -67,13 +77,13 @@ export function SearchField({ initial, onSearch }: { initial: string; onSearch: 
           pick(active >= 0 ? options[active] : undefined);
         }}
       >
-        <Search size={15} strokeWidth={2.4} className="pointer-events-none absolute left-2.5 text-secondary" aria-hidden="true" />
+        <Search size={pill ? 22 : 15} strokeWidth={pill ? 2 : 2.4} className={`pointer-events-none absolute text-secondary ${pill ? 'left-4' : 'left-2.5'}`} aria-hidden="true" />
         <input
           ref={input}
-          className="h-[38px] w-full rounded-pill border border-search-border bg-page pt-1.5 pr-[30px] pb-[5px] pl-7 type-body text-primary placeholder:text-tertiary [&::-webkit-search-cancel-button]:hidden"
+          className={`w-full rounded-pill type-body text-primary [&::-webkit-search-cancel-button]:hidden ${pill ? 'h-12 border border-transparent bg-panel-elevated pr-11 pl-12 placeholder:text-secondary outline-none transition-[border-color] hover:border-quaternary focus:border-primary' : 'h-[38px] border border-search-border bg-page pt-1.5 pr-[30px] pb-[5px] pl-7 placeholder:text-tertiary'}`}
           type="search"
           value={value}
-          placeholder="Artists, Songs, Lyrics, and More"
+          placeholder={pill ? 'Search songs, artists, albums' : 'Artists, Songs, Lyrics, and More'}
           aria-label="Search"
           role="combobox"
           aria-expanded={showList}
@@ -103,14 +113,14 @@ export function SearchField({ initial, onSearch }: { initial: string; onSearch: 
         {value && (
           <button
             type="button"
-            className="absolute right-[9px] grid size-4 place-items-center rounded-full bg-tertiary text-page"
+            className={`absolute grid place-items-center rounded-full ${pill ? 'right-3.5 size-6 text-secondary hover:text-primary' : 'right-[9px] size-4 bg-tertiary text-page'}`}
             aria-label="Clear"
             onClick={() => {
               setValue('');
               input.current?.focus();
             }}
           >
-            <X size={12} strokeWidth={3} />
+            <X size={pill ? 18 : 12} strokeWidth={pill ? 2.2 : 3} />
           </button>
         )}
       </form>
