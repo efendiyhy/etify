@@ -15,3 +15,11 @@ createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </StrictMode>,
 );
+
+// The service worker makes the site installable as an app (public/sw.js). Only
+// in a production build: in development it would stand between Vite and its updates.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((error: unknown) => console.warn('Etify: service worker', error));
+  });
+}
