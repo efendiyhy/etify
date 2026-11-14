@@ -1439,4 +1439,11 @@
     <string name="diwali_title">Etify からハッピー・ディワリ</string>
     <string name="diwali_subtitle">この光の祭りが、あなたの家を喜びで、毎日を音楽で満たしますように。</string>
     <string name="diwali_cta">お祝いしよう</string>
+    <string name="nickname">ニックネーム</string>
+    <string name="nickname_not_set">未設定</string>
+    <string name="nickname_hint">ホームでは Google アカウント名の代わりにこの名前で呼びかけます。</string>
+    <string name="greeting_morning">おはようございます</string>
+    <string name="greeting_afternoon">こんにちは</string>
+    <string name="greeting_evening">こんばんは</string>
+    <string name="greeting_night">おやすみなさい</string>
 </resources>

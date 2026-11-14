@@ -1466,4 +1466,11 @@
     <string name="diwali_title">A Etify deseja-lhe um feliz Diwali</string>
     <string name="diwali_subtitle">Que este festival das luzes encha a sua casa de alegria e os seus dias de música.</string>
     <string name="diwali_cta">Vamos celebrar</string>
+    <string name="nickname">Apelido</string>
+    <string name="nickname_not_set">Não definido</string>
+    <string name="nickname_hint">O Início cumprimenta-te com este nome em vez do da tua conta Google.</string>
+    <string name="greeting_morning">Bom dia</string>
+    <string name="greeting_afternoon">Boa tarde</string>
+    <string name="greeting_evening">Boa noite</string>
+    <string name="greeting_night">Boa noite</string>
 </resources>

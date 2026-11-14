@@ -1418,4 +1418,11 @@
     <string name="diwali_title">Etify mutlu Diwali diler</string>
     <string name="diwali_subtitle">Bu ışık bayramı evini neşeyle, günlerini müzikle doldursun.</string>
     <string name="diwali_cta">Hadi kutlayalım</string>
+    <string name="nickname">Takma ad</string>
+    <string name="nickname_not_set">Ayarlanmadı</string>
+    <string name="nickname_hint">Ana sayfa seni Google hesabının adı yerine bu adla selamlar.</string>
+    <string name="greeting_morning">Günaydın</string>
+    <string name="greeting_afternoon">Tünaydın</string>
+    <string name="greeting_evening">İyi akşamlar</string>
+    <string name="greeting_night">İyi geceler</string>
 </resources>

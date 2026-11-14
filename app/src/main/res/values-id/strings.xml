@@ -1438,4 +1438,11 @@
     <string name="diwali_title">Etify mengucapkan Selamat Hari Raya Diwali</string>
     <string name="diwali_subtitle">Semoga festival cahaya ini mengisi rumahmu dengan kebahagiaan dan harimu dengan musik.</string>
     <string name="diwali_cta">Ayo Rayakan</string>
+    <string name="nickname">Nama panggilan</string>
+    <string name="nickname_not_set">Belum diatur</string>
+    <string name="nickname_hint">Beranda akan menyapamu dengan nama ini, bukan nama akun Google-mu.</string>
+    <string name="greeting_morning">Selamat pagi</string>
+    <string name="greeting_afternoon">Selamat siang</string>
+    <string name="greeting_evening">Selamat sore</string>
+    <string name="greeting_night">Selamat malam</string>
 </resources>

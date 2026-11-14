@@ -1438,4 +1438,11 @@
     <string name="diwali_title">Etify 祝你排灯节快乐</string>
     <string name="diwali_subtitle">愿这个灯光节为你的家带来欢乐，让你的每一天充满音乐。</string>
     <string name="diwali_cta">一起庆祝</string>
+    <string name="nickname">昵称</string>
+    <string name="nickname_not_set">未设置</string>
+    <string name="nickname_hint">首页会用这个名字而不是你的 Google 账号名称来问候你。</string>
+    <string name="greeting_morning">早上好</string>
+    <string name="greeting_afternoon">下午好</string>
+    <string name="greeting_evening">晚上好</string>
+    <string name="greeting_night">晚安</string>
 </resources>

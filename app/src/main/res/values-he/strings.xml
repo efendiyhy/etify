@@ -1466,4 +1466,11 @@
     <string name="diwali_title">Etify מאחלת לך דיוואלי שמח</string>
     <string name="diwali_subtitle">שחג האורות הזה ימלא את ביתך בשמחה ואת ימיך במוזיקה.</string>
     <string name="diwali_cta">בואו נחגוג</string>
+    <string name="nickname">כינוי</string>
+    <string name="nickname_not_set">לא הוגדר</string>
+    <string name="nickname_hint">דף הבית יברך אותך בשם הזה במקום בשם חשבון Google שלך.</string>
+    <string name="greeting_morning">בוקר טוב</string>
+    <string name="greeting_afternoon">צהריים טובים</string>
+    <string name="greeting_evening">ערב טוב</string>
+    <string name="greeting_night">לילה טוב</string>
 </resources>

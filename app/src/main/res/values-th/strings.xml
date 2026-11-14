@@ -1444,4 +1444,11 @@
     <string name="diwali_title">Etify ขอให้คุณมีความสุขในเทศกาลดิวาลี</string>
     <string name="diwali_subtitle">ขอให้เทศกาลแห่งแสงนี้เติมบ้านของคุณด้วยความสุข และเติมทุกวันด้วยเสียงเพลง</string>
     <string name="diwali_cta">มาฉลองกัน</string>
+    <string name="nickname">ชื่อเล่น</string>
+    <string name="nickname_not_set">ยังไม่ได้ตั้ง</string>
+    <string name="nickname_hint">หน้าหลักจะทักทายคุณด้วยชื่อนี้แทนชื่อบัญชี Google</string>
+    <string name="greeting_morning">สวัสดีตอนเช้า</string>
+    <string name="greeting_afternoon">สวัสดีตอนบ่าย</string>
+    <string name="greeting_evening">สวัสดีตอนเย็น</string>
+    <string name="greeting_night">ราตรีสวัสดิ์</string>
 </resources>

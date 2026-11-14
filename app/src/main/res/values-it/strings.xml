@@ -1400,4 +1400,11 @@
     <string name="diwali_title">Etify ti augura un felice Diwali</string>
     <string name="diwali_subtitle">Che questa festa delle luci riempia la tua casa di gioia e le tue giornate di musica.</string>
     <string name="diwali_cta">Festeggiamo</string>
+    <string name="nickname">Soprannome</string>
+    <string name="nickname_not_set">Non impostato</string>
+    <string name="nickname_hint">La Home ti saluta con questo nome invece di quello del tuo account Google.</string>
+    <string name="greeting_morning">Buongiorno</string>
+    <string name="greeting_afternoon">Buon pomeriggio</string>
+    <string name="greeting_evening">Buonasera</string>
+    <string name="greeting_night">Buonanotte</string>
 </resources>

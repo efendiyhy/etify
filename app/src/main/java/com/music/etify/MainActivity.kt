@@ -934,6 +934,7 @@ private fun EtifyApp(
         }
     }
     val account by viewModel.account.collectAsStateWithLifecycle()
+    val nickname by AppSettings.nickname.collectAsStateWithLifecycle()
     val selectedChannelName by viewModel.selectedChannelName.collectAsStateWithLifecycle()
     val googleAccounts by viewModel.googleAccounts.collectAsStateWithLifecycle()
     val activeAccountId by viewModel.activeAccountId.collectAsStateWithLifecycle()
@@ -3381,7 +3382,7 @@ private fun EtifyApp(
                                 listState = homeListState,
                                 currentSong = player.song,
                                 isPlaying = player.isPlaying,
-                                title = stringResource(R.string.listen_now),
+                                title = homeGreeting(nickname),
                                 festiveLogo = diwaliFestive,
                                 onFestiveLogoClick = { showDiwali = true },
                                 signedIn = signedIn,
@@ -3416,7 +3417,8 @@ private fun EtifyApp(
                                 recentlyPlayedLoading = homeRecentlyPlayedLoading && !hideRecents,
                                 topPicks = topPicks,
                                 topPicksLoading = topPicksLoading,
-                                listenerName = account?.name,
+                                // The nickname (Settings), never the Google account's name.
+                                listenerName = nickname.trim().ifBlank { null },
                                 // Neither shelf is drawn without its callback.
                                 onTopPickClick = openTopPick.takeUnless { hideTopPicks },
                                 onMoodClick = playMood.takeUnless { hideHomeMoods },
@@ -6275,3 +6277,23 @@ private const val TAB_HOME = 0
 private const val TAB_EXPLORE = 1
 private const val TAB_LIBRARY = 2
 private const val TAB_SEARCH = 3
+
+/**
+ * Home's heading: "Good night", "Good morning" and so on by the phone's clock,
+ * followed by the nickname from Settings when there is one ("Good night,
+ * Yamata"). Worked out again whenever Home comes back into composition.
+ */
+@Composable
+private fun homeGreeting(nickname: String): String {
+    val hour = remember { java.time.LocalTime.now().hour }
+    val base = stringResource(
+        when {
+            hour < 5 -> R.string.greeting_night
+            hour < 12 -> R.string.greeting_morning
+            hour < 18 -> R.string.greeting_afternoon
+            else -> R.string.greeting_evening
+        },
+    )
+    val name = nickname.trim()
+    return if (name.isEmpty()) base else "$base, $name"
+}

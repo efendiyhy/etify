@@ -1332,4 +1332,11 @@
     <string name="diwali_title">Etify wishes you a Happy Diwali</string>
     <string name="diwali_subtitle">May this festival of lights fill your home with joy and your days with music.</string>
     <string name="diwali_cta">Let\'s Celebrate</string>
+    <string name="nickname">Nickname</string>
+    <string name="nickname_not_set">Not set</string>
+    <string name="nickname_hint">Home greets you by this name instead of your Google account’s.</string>
+    <string name="greeting_morning">Good morning</string>
+    <string name="greeting_afternoon">Good afternoon</string>
+    <string name="greeting_evening">Good evening</string>
+    <string name="greeting_night">Good night</string>
 </resources>

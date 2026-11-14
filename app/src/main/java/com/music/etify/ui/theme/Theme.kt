@@ -19,32 +19,45 @@ import androidx.compose.ui.unit.sp
 import com.music.etify.R
 import com.music.etify.data.settings.AppFont
 
-// Apple Music's signature red. No longer the primary accent, but kept for the
-// spots (Replay's rank badge) that want that specific red regardless of theme.
-val AccentRed = Color(0xFFFA2D48)
+// Etify's light purple, the same key colour as the web player: the lighter
+// tone on dark, the deeper one on light, where it has to hold contrast.
+val EtifyPurple = Color(0xFFB9A3FF)
+val EtifyPurpleDeep = Color(0xFF7C5CE0)
 
+// The spots (Replay's rank badge) that want the brand colour regardless of theme.
+val AccentRed = Color(0xFF8B6CF0)
+
+// Panels on black, as the web player draws them.
 private val DarkColors = darkColorScheme(
-    primary = Color.White,
-    onPrimary = Color.Black,
+    primary = EtifyPurple,
+    onPrimary = Color(0xFF1B1036),
+    primaryContainer = Color(0xFF3A2A6B),
+    onPrimaryContainer = Color(0xFFE9E1FF),
+    secondary = EtifyPurple,
+    onSecondary = Color(0xFF1B1036),
     background = Color.Black,
     onBackground = Color.White,
-    surface = Color(0xFF0D0D0F),
+    surface = Color(0xFF121212),
     onSurface = Color.White,
-    surfaceVariant = Color(0xFF1C1C1E),
-    onSurfaceVariant = Color(0xFF8E8E93),
-    outline = Color(0xFF2C2C2E),
+    surfaceVariant = Color(0xFF242424),
+    onSurfaceVariant = Color(0xFFB3B3B3),
+    outline = Color(0xFF2E2E2E),
 )
 
 private val LightColors = lightColorScheme(
-    primary = Color.Black,
+    primary = EtifyPurpleDeep,
     onPrimary = Color.White,
+    primaryContainer = Color(0xFFE9E1FF),
+    onPrimaryContainer = Color(0xFF2A1A5E),
+    secondary = EtifyPurpleDeep,
+    onSecondary = Color.White,
     background = Color.White,
     onBackground = Color.Black,
-    surface = Color(0xFFF7F7F9),
+    surface = Color(0xFFF6F3FC),
     onSurface = Color.Black,
-    surfaceVariant = Color(0xFFF2F2F7),
-    onSurfaceVariant = Color(0xFF6E6E73),
-    outline = Color(0xFFE5E5EA),
+    surfaceVariant = Color(0xFFEFEAF9),
+    onSurfaceVariant = Color(0xFF6E6A78),
+    outline = Color(0xFFE4DFF0),
 )
 
 /**

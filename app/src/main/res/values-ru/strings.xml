@@ -1493,4 +1493,11 @@
     <string name="diwali_title">Etify поздравляет с Дивали</string>
     <string name="diwali_subtitle">Пусть этот праздник огней наполнит ваш дом радостью, а дни — музыкой.</string>
     <string name="diwali_cta">Отпразднуем</string>
+    <string name="nickname">Никнейм</string>
+    <string name="nickname_not_set">Не задан</string>
+    <string name="nickname_hint">Главная будет приветствовать вас этим именем вместо имени аккаунта Google.</string>
+    <string name="greeting_morning">Доброе утро</string>
+    <string name="greeting_afternoon">Добрый день</string>
+    <string name="greeting_evening">Добрый вечер</string>
+    <string name="greeting_night">Доброй ночи</string>
 </resources>

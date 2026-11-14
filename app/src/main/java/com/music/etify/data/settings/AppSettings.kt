@@ -532,6 +532,13 @@ object AppSettings {
     val translationLanguage = MutableStateFlow("")
 
     /**
+     * The name Home greets you with ("Good night, Yamata") and the personal
+     * station is named after, in place of the Google account's name. Blank
+     * means no name in the greeting.
+     */
+    val nickname = MutableStateFlow("")
+
+    /**
      * Plays a looping video behind the cover art on the player when one is
      * published for the track — Spotify's Canvas, Apple's motion artwork.
      *
@@ -1050,6 +1057,7 @@ object AppSettings {
         lyricsOffsetMs.value = prefs.getInt(KEY_LYRICS_OFFSET_MS, 0)
             .coerceIn(MIN_LYRICS_OFFSET_MS, MAX_LYRICS_OFFSET_MS)
         translationLanguage.value = prefs.getString(KEY_TRANSLATION_LANGUAGE, "").orEmpty()
+        nickname.value = prefs.getString(KEY_NICKNAME, "").orEmpty()
         if (highPerformanceMode.value) {
             reduceAnimation.value = false
             reduceDynamicBlur.value = false
@@ -1394,6 +1402,12 @@ object AppSettings {
     fun setShowNerdStats(value: Boolean) {
         showNerdStats.value = value
         prefs.edit().putBoolean(KEY_NERD_STATS, value).apply()
+    }
+
+    fun setNickname(value: String) {
+        val trimmed = value.take(NICKNAME_MAX_LENGTH)
+        nickname.value = trimmed
+        prefs.edit().putString(KEY_NICKNAME, trimmed).apply()
     }
 
     fun setShowListenTogetherButton(value: Boolean) {
@@ -2312,6 +2326,8 @@ object AppSettings {
     private const val KEY_LYRICS_BLUR = "lyrics_blur"
     private const val KEY_LYRICS_OFFSET_MS = "lyrics_offset_ms"
     private const val KEY_TRANSLATION_LANGUAGE = "translation_language"
+    private const val KEY_NICKNAME = "nickname"
+    const val NICKNAME_MAX_LENGTH = 40
     private const val KEY_ANIMATED_CANVAS = "animated_canvas"
     private const val KEY_CANVAS_OVER_CELLULAR = "canvas_over_cellular"
     private const val KEY_SPOTIFY_CANVAS_AUTO_HIDE = "spotify_canvas_auto_hide"

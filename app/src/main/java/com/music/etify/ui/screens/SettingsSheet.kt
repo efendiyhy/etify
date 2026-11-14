@@ -404,6 +404,8 @@ fun SettingsScreen(
         }
     }
     var showListenBrainzTokenDialog by remember { mutableStateOf(false) }
+    var showNicknameDialog by remember { mutableStateOf(false) }
+    val nickname by AppSettings.nickname.collectAsStateWithLifecycle()
     var showLastfmLoginDialog by remember { mutableStateOf(false) }
     val scrobbleScope = rememberCoroutineScope()
 
@@ -592,6 +594,15 @@ fun SettingsScreen(
             // The categories, each a page of its own — until there is a query,
             // when their rows answer here instead (below).
             if (!searching) {
+                // Your nickname: what Home greets you by, in place of the Google name.
+                SettingsGroup {
+                    SettingsRow(
+                        icon = Icons.Rounded.Person,
+                        title = stringResource(R.string.nickname),
+                        value = nickname.ifBlank { stringResource(R.string.nickname_not_set) },
+                        onClick = { showNicknameDialog = true },
+                    )
+                }
                 SettingsCategoryList(onOpen = onOpenSection)
                 if (watchAvailable) {
                     SettingsGroup {
@@ -1801,14 +1812,17 @@ fun SettingsScreen(
                     append("GitHub")
                 }
                 append("  ")
-                withLink(LinkAnnotation.Url("https://github.com/efendiyhy", linkStyles)) {
+                withLink(LinkAnnotation.Url("https://ek-instrumentation.com", linkStyles)) {
                     append("Developer")
                 }
                 append("  ")
                 withLink(LinkAnnotation.Url("https://etify-3c7ec.web.app/", linkStyles)) {
                     append("Website")
                 }
-                append("\n~YouTube Music & Listen Together Backend")
+                append("\nDeveloped by ")
+                withLink(LinkAnnotation.Url("https://ek-instrumentation.com", linkStyles)) {
+                    append("EK-Instrumentation")
+                }
             },
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1917,6 +1931,44 @@ fun SettingsScreen(
             dismissButton = {
                 TextButton(onClick = { showPerformanceConfirmation = false }) {
                     Text(stringResource(R.string.not_yet))
+                }
+            },
+        )
+    }
+
+    if (showNicknameDialog) {
+        var nicknameInput by remember { mutableStateOf(nickname) }
+        AlertDialog(
+            onDismissRequest = { showNicknameDialog = false },
+            title = { Text(stringResource(R.string.nickname)) },
+            text = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.nickname_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = nicknameInput,
+                        onValueChange = { nicknameInput = it.take(AppSettings.NICKNAME_MAX_LENGTH) },
+                        label = { Text(stringResource(R.string.nickname)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    AppSettings.setNickname(nicknameInput.trim())
+                    showNicknameDialog = false
+                }) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNicknameDialog = false }) {
+                    Text(stringResource(R.string.cancel))
                 }
             },
         )

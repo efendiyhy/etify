@@ -454,12 +454,9 @@ fun CompactTrackRow(
 }
 
 /**
- * Listen now's large heading, with the wordmark stacked above it.
- *
- * Only the home tab carries it — the top bar no longer shows the logo, so this
- * is where the app's mark lives. Its height is taken from the heading's own
- * font size rather than a fixed dp, so the two keep their proportion under the
- * system font scale.
+ * Home's heading: the mark in the key colour beside the greeting ("Good night,
+ * Yamata"), set large. The mark's height follows the heading's font size so the
+ * two keep their proportion under the system font scale.
  */
 @Composable
 private fun HomeTitle(
@@ -468,11 +465,13 @@ private fun HomeTitle(
     festiveLogo: Boolean = false,
     onFestiveLogoClick: (() -> Unit)? = null,
 ) {
-    val style = MaterialTheme.typography.displayLarge
+    val style = MaterialTheme.typography.headlineLarge
     val logoHeight = with(LocalDensity.current) { (style.fontSize * LOGO_TO_FONT).toDp() }
-    Column(modifier = modifier.padding(horizontal = PAGE_GUTTER, vertical = 8.dp)) {
+    Row(
+        modifier = modifier.padding(start = PAGE_GUTTER, end = PAGE_GUTTER, top = 8.dp, bottom = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         val logoModifier = Modifier
-            .padding(bottom = 14.dp)
             .height(logoHeight)
             .aspectRatio(LOGO_ASPECT)
         if (festiveLogo) {
@@ -485,21 +484,23 @@ private fun HomeTitle(
             Icon(
                 painter = painterResource(Res.drawable.ic_logo),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onBackground,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = logoModifier,
             )
         }
-        // "Listen now" is hidden for now; the wordmark above stays.
-        // Text(
-        //     text = title,
-        //     style = style,
-        //     color = MaterialTheme.colorScheme.onBackground,
-        // )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = title,
+            style = style,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
 /** The wordmark's height against the heading's font size. */
-private const val LOGO_TO_FONT = 0.9f
+private const val LOGO_TO_FONT = 0.85f
 
 /** ic_logo's viewport, 730 x 484. */
 private const val LOGO_ASPECT = 730f / 484f

@@ -1378,4 +1378,11 @@
     <string name="diwali_title">Etify chúc bạn lễ Diwali vui vẻ</string>
     <string name="diwali_subtitle">Mong lễ hội ánh sáng này lấp đầy ngôi nhà bạn bằng niềm vui và mỗi ngày bằng âm nhạc.</string>
     <string name="diwali_cta">Cùng ăn mừng</string>
+    <string name="nickname">Biệt danh</string>
+    <string name="nickname_not_set">Chưa đặt</string>
+    <string name="nickname_hint">Trang chủ sẽ chào bạn bằng tên này thay cho tên tài khoản Google.</string>
+    <string name="greeting_morning">Chào buổi sáng</string>
+    <string name="greeting_afternoon">Chào buổi chiều</string>
+    <string name="greeting_evening">Chào buổi tối</string>
+    <string name="greeting_night">Chúc ngủ ngon</string>
 </resources>

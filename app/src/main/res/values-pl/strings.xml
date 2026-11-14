@@ -1501,4 +1501,11 @@
     <string name="diwali_title">Etify życzy szczęśliwego Diwali</string>
     <string name="diwali_subtitle">Niech to święto świateł wypełni Twój dom radością, a dni muzyką.</string>
     <string name="diwali_cta">Świętujmy</string>
+    <string name="nickname">Pseudonim</string>
+    <string name="nickname_not_set">Nie ustawiono</string>
+    <string name="nickname_hint">Ekran główny wita Cię tym imieniem zamiast nazwy konta Google.</string>
+    <string name="greeting_morning">Dzień dobry</string>
+    <string name="greeting_afternoon">Dzień dobry</string>
+    <string name="greeting_evening">Dobry wieczór</string>
+    <string name="greeting_night">Dobranoc</string>
 </resources>
