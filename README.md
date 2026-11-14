@@ -81,6 +81,12 @@ Kebutuhan: JDK 17, Android SDK 36, NDK, dan CMake 3.22.1 atau lebih baru.
 
 Untuk build rilis yang ditandatangani, salin `keystore.properties.example` menjadi `keystore.properties` lalu isi dengan keystore milikmu.
 
+#### APK dari GitHub Actions
+
+Workflow **Android APK** (`.github/workflows/android.yml`) mem-build APK rilis di setiap push ke `main`, atau bisa dijalankan manual dari tab Actions. Hasilnya bisa diunduh sebagai artifact **etify-android-apk** di halaman run tersebut. Isinya satu APK per arsitektur, ditambah APK `universal` yang jalan di semua HP.
+
+Supaya setiap APK bisa meng-update versi sebelumnya, isi secret repository berikut (Settings → Secrets and variables → Actions): `KEYSTORE_BASE64` (keystore dalam base64), `KEYSTORE_PASSWORD`, `KEY_ALIAS`, dan `KEY_PASSWORD`. Tanpa secret itu, APK tetap dibuat dan bisa dipasang, tapi ditandatangani kunci sekali pakai, jadi versi berikutnya harus di-uninstall dulu sebelum dipasang.
+
 ### Web dan ekstensi browser
 
 Kebutuhan: Node 22 atau lebih baru. pnpm sudah tersedia lewat corepack.

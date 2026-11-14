@@ -8,6 +8,8 @@ import { LoadError, LoadMoreError, NeedsExtension } from '@/components/music/Sta
 import { useHome, useLibrary, useYouTubeReady } from '@/data/music/queries';
 import type { Track } from '@/data/music/types';
 import { HomeSkeleton } from '@/skeletons/PageSkeletons';
+import { greeting } from '@/lib/greeting';
+import { useNickname } from '@/state/profile';
 import { ShelfSkeleton } from '@/skeletons/ShelfSkeleton';
 
 const RECENT_TITLE = 'Recently Played';
@@ -24,15 +26,6 @@ function useRecentlyPlayed(): Track[] {
   const first = history.data?.pages[0]?.data.tracks ?? [];
   const seen = new Set<string>();
   return first.filter((t) => !seen.has(t.videoId) && seen.add(t.videoId)).slice(0, RECENT_LIMIT);
-}
-
-/** "Good morning" and so on, by the clock on this computer. */
-function greeting(now = new Date()): string {
-  const hour = now.getHours();
-  if (hour < 5) return 'Good night';
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
 }
 
 const QUICK_LIMIT = 8;
@@ -74,6 +67,7 @@ export default function HomePage() {
   const { missing } = useYouTubeReady();
   const home = useHome();
   const recent = useRecentlyPlayed();
+  const nick = useNickname();
   const sentinel = useRef<HTMLDivElement>(null);
 
   // Loads the next shelves before the bottom comes into view; after a failed
@@ -94,7 +88,7 @@ export default function HomePage() {
   if (missing) {
     return (
       <>
-        <PageHeader title="Home" />
+        <PageHeader title={nick ? `${greeting()}, ${nick}` : greeting()} />
         <NeedsExtension />
       </>
     );
@@ -103,7 +97,7 @@ export default function HomePage() {
   if (home.isError && !home.data) {
     return (
       <>
-        <PageHeader title="Home" />
+        <PageHeader title={nick ? `${greeting()}, ${nick}` : greeting()} />
         <LoadError error={home.error} onRetry={() => void home.refetch()} />
       </>
     );
@@ -116,7 +110,7 @@ export default function HomePage() {
     .filter((shelf) => !(recent.length > 0 && shelf.title.trim().toLowerCase() === RECENT_TITLE.toLowerCase()));
   return (
     <>
-      <PageHeader title={greeting()} />
+      <PageHeader title={nick ? `${greeting()}, ${nick}` : greeting()} />
       <QuickPicks tracks={recent} />
       {recent.length > 0 && <TrackShelf title={RECENT_TITLE} to="/library/recent" tracks={recent} source={RECENT_SOURCE} />}
       <Shelves shelves={shelves} />

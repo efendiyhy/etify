@@ -2,6 +2,7 @@ import { ArrowUpRight, ChevronsUpDown } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Menu, MenuHeader, MenuItem, MenuSeparator } from '@/components/Menu';
 import { useRefreshYtAuth, useSelectChannel, useSetConnected, useYtAuth } from '@/extension/useYtAuth';
+import { useNickname } from '@/state/profile';
 
 const SIGN_IN_URL = 'https://accounts.google.com/ServiceLogin?service=youtube&continue=https://music.youtube.com/';
 
@@ -34,6 +35,7 @@ export function AccountButton() {
   const connect = useSetConnected();
   const refresh = useRefreshYtAuth();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const nick = useNickname();
   const close = useCallback(() => setAnchor(null), []);
 
   if (status.state !== 'ready') return null;
@@ -67,6 +69,8 @@ export function AccountButton() {
     );
   }
   const active = auth.active;
+  // Your nickname (Settings › Profile) in place of the Google account's name.
+  const shownName = nick || active.name;
   const multiple = auth.accounts.flatMap((a) => a.channels).length > 1;
 
   return (
@@ -78,8 +82,8 @@ export function AccountButton() {
         aria-expanded={anchor !== null}
         onClick={(event) => setAnchor(anchor ? null : event.currentTarget)}
       >
-        <Avatar src={active.avatarUrl} name={active.name} size={24} />
-        <span className="min-w-0 flex-1 truncate">{active.name}</span>
+        <Avatar src={active.avatarUrl} name={shownName} size={24} />
+        <span className="min-w-0 flex-1 truncate">{shownName}</span>
         {multiple && <ChevronsUpDown size={14} strokeWidth={2} className="flex-none text-secondary" />}
       </button>
       {anchor && (

@@ -102,6 +102,8 @@ export class PartyError extends Error {
   }
 }
 
+import { nickname } from '@/state/profile';
+
 // ---- Settings: the server, a nickname -------------------------------------------------
 
 const SETTINGS_KEY = 'etify:party';
@@ -158,7 +160,7 @@ async function identity(): Promise<Omit<JoinRequest, 'maxMembers' | 'autoplayEna
   const auth = ytAuthSnapshot();
   const active = auth.signedIn ? auth.active : null;
   if (!active) throw new PartyError('not_signed_in', 'Sign in to YouTube Music to listen together.');
-  const name = partySettings().nickname.trim() || active.name;
+  const name = nickname() || active.name;
   return {
     userId: (await sha256(`${active.authUser}:${active.id}`)).slice(0, 32),
     deviceId: deviceId(),

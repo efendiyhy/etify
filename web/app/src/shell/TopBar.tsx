@@ -1,4 +1,4 @@
-import { Home, Settings } from 'lucide-react';
+import { Home, LayoutGrid, Settings } from 'lucide-react';
 import { MdOutlineExtension } from 'react-icons/md';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { PrefetchLink, PrefetchNavLink } from '@/components/PrefetchLink';
@@ -44,6 +44,9 @@ export function TopBar() {
           <Home size={24} strokeWidth={2} />
         </PrefetchNavLink>
         <SearchPill />
+        <PrefetchNavLink to="/new" className={roundButton} aria-label="New" title="New">
+          <LayoutGrid size={22} strokeWidth={2} />
+        </PrefetchNavLink>
       </div>
       <div className="flex items-center gap-1 justify-self-end pr-2">
         <PrefetchNavLink to="/extension" className={iconButton} aria-label="Etify Extension" title="Etify Extension">

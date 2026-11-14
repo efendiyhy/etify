@@ -11,7 +11,9 @@ import { useParty } from '@/party/useParty';
 import { useHistorySettings } from '@/playback/historyReporting';
 import { Select } from '@/components/Select';
 import { AUTOMIX_BARS } from '@/playback/automix/choices';
+import { greeting } from '@/lib/greeting';
 import { CROSSFADE_CHOICES, usePlayer } from '@/state/player';
+import { NICKNAME_MAX, useProfile } from '@/state/profile';
 import { AppleMusicIntegration, AppleMusicToggles, CanvasToggle, DiscordIntegration, LyricSourcesAccess, SpotifyIntegration, Toggle } from './IntegrationSettings';
 import { settingsUi } from './settingsStyles';
 
@@ -46,7 +48,7 @@ function youtubeText(auth: ReturnType<typeof useYtAuth>): string {
   const { browserSignedIn, connected, active } = auth.auth;
   if (!browserSignedIn) return 'Not signed in';
   if (!connected) return 'Disconnected';
-  return active ? active.name : 'Signed in';
+  return active ? useProfile.getState().nickname.trim() || active.name : 'Signed in';
 }
 
 /**
@@ -67,6 +69,8 @@ export default function SettingsPage() {
   const setShareHistory = useHistorySettings((s) => s.setShare);
   const { setAutoplay, setCrossfade, setAutomix, setAutomixBars, setShowNerdStats } = usePlayer.getState();
   const [lyrics, setLyrics] = useState(false);
+  const nickname = useProfile((s) => s.nickname);
+  const setNickname = useProfile((s) => s.setNickname);
   const present = extension.state === 'present';
   const discordText =
     discord.state === 'ready' && discord.discord.connected
@@ -81,6 +85,25 @@ export default function SettingsPage() {
     <div className={settingsUi.centered}>
       <PageHeader title="Settings" />
       <div className={settingsUi.body}>
+        <h2 className={settingsUi.sectionHeader}>Profile</h2>
+        <section className={settingsUi.group}>
+          <label className={settingsUi.controlRow}>
+            <span>Nickname</span>
+            <input
+              className={settingsUi.input}
+              placeholder="e.g. Yamata"
+              value={nickname}
+              maxLength={NICKNAME_MAX}
+              autoComplete="nickname"
+              onChange={(e) => setNickname(e.currentTarget.value)}
+            />
+          </label>
+        </section>
+        <p className={settingsUi.footer}>
+          Shown in Home’s greeting{nickname.trim() ? ` (“${greeting()}, ${nickname.trim()}”)` : ''}, on the account button and to others in Listen Together,
+          instead of your Google account’s name. Saved on this browser.
+        </p>
+
         <h2 className={settingsUi.sectionHeader}>Account & Integrations</h2>
         <section className={settingsUi.group}>
           <div className={settingsUi.integration}>

@@ -21,6 +21,7 @@ import {
 } from '@/party/listenTogether';
 import { usePlayer } from '@/state/player';
 import { Toggle } from './IntegrationSettings';
+import { NICKNAME_MAX, useProfile } from '@/state/profile';
 import { settingsUi } from './settingsStyles';
 
 const lede = 'mx-4 mb-4 type-body-tall text-secondary';
@@ -75,6 +76,8 @@ function StartOrJoin({ signedIn }: { signedIn: boolean }) {
   const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [settings, setSettings] = useState(partySettings);
+  const nickname = useProfile((s) => s.nickname);
+  const setNickname = useProfile((s) => s.setNickname);
   const autoplay = usePlayer((s) => s.autoplay);
   const create = useMutation({ mutationFn: () => createParty({ autoplayEnabled: autoplay }) });
   const update = (change: Partial<typeof settings>) => {
@@ -127,12 +130,13 @@ function StartOrJoin({ signedIn }: { signedIn: boolean }) {
       <section className={settingsUi.group}>
         <label className={settingsUi.controlRow}>
           <span>Name in parties</span>
+          {/* The same nickname as Settings › Profile. */}
           <input
             className={settingsUi.input}
-            placeholder="Your YouTube name"
-            value={settings.nickname}
-            maxLength={80}
-            onChange={(e) => update({ nickname: e.currentTarget.value })}
+            placeholder="Your nickname"
+            value={nickname}
+            maxLength={NICKNAME_MAX}
+            onChange={(e) => setNickname(e.currentTarget.value)}
           />
         </label>
         <label className={settingsUi.controlRow}>
