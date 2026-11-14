@@ -20,7 +20,7 @@
 
 ## Tentang Etify
 
-Etify adalah klien YouTube Music open-source dengan tampilan yang rapi dan audio yang serius. Satu kode dasar dipakai untuk ponsel Android, Android TV, jam Wear OS, dan browser. Kamu bisa masuk dengan akun Google, menyambungkan Spotify, mendengarkan lirik yang tersinkron per kata, dan memutar musik bersama teman secara real-time.
+Etify adalah klien YouTube Music open-source dengan tampilan yang rapi dan audio yang serius. Tersedia sebagai aplikasi Android dan sebagai situs web di [etify-3c7ec.web.app](https://etify-3c7ec.web.app). Kamu bisa masuk dengan akun Google, menyambungkan Spotify, mendengarkan lirik yang tersinkron per kata, dan memutar musik bersama teman secara real-time.
 
 ## Fitur
 
@@ -56,8 +56,6 @@ Etify adalah klien YouTube Music open-source dengan tampilan yang rapi dan audio
 | Platform | Folder | Teknologi |
 |---|---|---|
 | Android (ponsel) | `app/` | Kotlin, Jetpack Compose, Media3 |
-| Android TV | `tv/` | Kotlin, Compose for TV |
-| Wear OS | `wearos/` | Kotlin, Compose for Wear |
 | Web | `web/app/` | React 19, Vite, TypeScript, Tailwind CSS |
 | Ekstensi browser | `web/extension/` | WXT, Manifest V3 (Chrome, Edge, Brave, Firefox) |
 | Server Listen Together | `backend/` | Go, WebSocket |
@@ -69,16 +67,12 @@ Ambil APK terbaru dari halaman [Releases](https://github.com/efendiyhy/etify/rel
 
 ## Build dari source
 
-### Aplikasi Android, TV, dan Wear OS
+### Aplikasi Android
 
 Kebutuhan: JDK 17, Android SDK 36, NDK, dan CMake 3.22.1 atau lebih baru.
 
 ```bash
 ./gradlew assembleDevDebug
-```
-
-```bash
-./gradlew :tv:assembleDevDebug
 ```
 
 ```bash
@@ -109,9 +103,23 @@ cd backend && go run .
 
 Cara kerja sinkronisasi dan langkah deploy ada di [`backend/README.md`](backend/README.md).
 
-### Domain
+### Deploy web ke Firebase Hosting
 
-Kode ini memakai alamat contoh `etify.example.com` (beserta `api.`, `jam.`, dan `auth.`) serta `etify.pages.dev`. Ganti semuanya dengan domain milikmu sebelum merilis.
+Situs web di-hosting di proyek Firebase `etify-3c7ec` dan tampil di `https://etify-3c7ec.web.app`. Konfigurasinya ada di `web/firebase.json` dan `web/.firebaserc`. Dari folder `web/`:
+
+```bash
+VITE_PARTY_SERVER_URL=https://jam.etify.example.com corepack pnpm build:site
+```
+
+```bash
+firebase deploy --only hosting
+```
+
+Perintah `firebase` didapat dari `npm install -g firebase-tools`, lalu `firebase login`. Detailnya ada di [`web/README.md`](web/README.md).
+
+### Domain server
+
+Server Listen Together, API, dan login Discord masih memakai alamat contoh `jam.etify.example.com`, `api.etify.example.com`, dan `auth.etify.example.com`. Server Go di `backend/` tidak bisa berjalan di Firebase Hosting, jadi jalankan di Cloud Run, Render, atau VPS, lalu ganti alamat-alamat contoh itu dengan alamat servermu.
 
 ## Kontribusi
 

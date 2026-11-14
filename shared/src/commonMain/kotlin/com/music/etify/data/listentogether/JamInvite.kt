@@ -9,7 +9,7 @@ package com.music.etify.data.listentogether
  */
 object JamInvite {
 
-    const val ORIGIN = "https://etify.example.com"
+    const val ORIGIN = "https://etify-3c7ec.web.app"
 
     /** How many characters a party code carries. */
     const val CODE_LENGTH = 6

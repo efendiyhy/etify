@@ -16,10 +16,10 @@ data class ParsedJamInvite(
 /** Relays a Etify web or scheme invite from [com.music.etify.MainActivity] to Compose. */
 object JamInviteLink {
 
-    const val ORIGIN = "https://etify.example.com"
+    const val ORIGIN = "https://etify-3c7ec.web.app"
 
     private const val EXTRA_CONSUMED = "etify.jamInviteConsumed"
-    private const val HOST = "etify.example.com"
+    private const val HOST = "etify-3c7ec.web.app"
     private const val CUSTOM_SCHEME = "etify"
     private const val CUSTOM_HOST = "party"
 
@@ -50,7 +50,7 @@ object JamInviteLink {
     /**
      * Parses an incoming invite:
      * 1. etify://party/<CODE>?server=<SERVER>
-     * 2. https://etify.example.com/invite/<CODE>?server=<SERVER>
+     * 2. https://etify-3c7ec.web.app/invite/<CODE>?server=<SERVER>
      */
     fun parseInvite(value: String?): ParsedJamInvite? {
         val uri = runCatching { URI(value ?: return null) }.getOrNull() ?: return null
@@ -67,7 +67,7 @@ object JamInviteLink {
             return ParsedJamInvite(code = code, serverUrl = server)
         }
 
-        // 2. Official web domain: https://etify.example.com/invite/<CODE>
+        // 2. Official web domain: https://etify-3c7ec.web.app/invite/<CODE>
         if (scheme == "https" && host == HOST) {
             val match = INVITE_PATH.matchEntire(uri.path.orEmpty()) ?: return null
             val code = match.groupValues[1].uppercase()

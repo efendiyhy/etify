@@ -33,7 +33,7 @@ class JamInviteTest {
 
     @Test
     fun `plain http is refused`() {
-        assertNull(JamInvite.parse("http://etify.example.com/invite/ABC123"))
+        assertNull(JamInvite.parse("http://etify-3c7ec.web.app/invite/ABC123"))
     }
 
     @Test

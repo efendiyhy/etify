@@ -1,10 +1,10 @@
 /**
- * Party invites (JamInviteLink.kt): `https://etify.example.com/invite/<CODE>`,
+ * Party invites (JamInviteLink.kt): `https://etify-3c7ec.web.app/invite/<CODE>`,
  * optionally `?server=<custom server>`, and `etify://party/<CODE>`. On the
  * web the first is a route of this app (`/invite/:code`).
  */
 
-export const INVITE_ORIGIN = 'https://etify.example.com';
+export const INVITE_ORIGIN = 'https://etify-3c7ec.web.app';
 export const CODE_LENGTH = 6;
 
 /** Letters and digits only, upper case; null unless it's six of them. */

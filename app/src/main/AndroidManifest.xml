@@ -225,7 +225,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="https"
-                    android:host="etify.example.com"
+                    android:host="etify-3c7ec.web.app"
                     android:pathPattern="/invite/......" />
             </intent-filter>
 

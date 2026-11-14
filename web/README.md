@@ -59,22 +59,35 @@ Then open `http://localhost:5173/extension`. It shows "Installed", with the vers
 
 | Variable | Where | Default |
 |---|---|---|
-| `ETIFY_SITE_ORIGINS` | extension build | `https://etify.example.com,https://etify.pages.dev,http://localhost:5173` (store builds leave out localhost). Comma-separated origins the extension serves; replaces the default |
+| `ETIFY_SITE_ORIGINS` | extension build | `https://etify-3c7ec.web.app,https://etify-3c7ec.firebaseapp.com,http://localhost:5173` (store builds leave out localhost). Comma-separated origins the extension serves; replaces the default |
 | `ETIFY_STORE_BUILD=1` | extension build | Leaves out the dev `key` for a Chrome Web Store upload |
 | `VITE_EXTENSION_ID_CHROMIUM` | app (`app/.env.local`) | The pinned dev id. Set it for a store-built extension |
 | `VITE_ANDROID_APP_URL` | app | The GitHub releases page |
-| `VITE_PARTY_SERVER_URL` | app (`app/.env.local`, Pages env) | None. The Listen Together server; `vite build` fails without it |
+| `VITE_PARTY_SERVER_URL` | app (`app/.env.local`, or the shell that runs the build) | None. The Listen Together server; `vite build` fails without it |
 
-## Deploy (Cloudflare Pages)
+## Deploy (Firebase Hosting)
 
-| Setting | Value |
-| --- | --- |
-| Root directory | `web` |
-| Build command | `pnpm build:site` |
-| Output directory | `app/dist` |
-| Environment | `NODE_VERSION=22`, `VITE_PARTY_SERVER_URL` |
+The site is hosted on Firebase project `etify-3c7ec` (`web/.firebaserc`), at `https://etify-3c7ec.web.app`. `web/firebase.json` serves `app/dist`, sends every path to `index.html` so React Router can handle it, and caches the hashed `assets/` for a year.
+
+One-time setup:
+
+```bash
+npm install -g firebase-tools
+firebase login
+```
+
+Each deploy, from `web/`:
+
+```bash
+VITE_PARTY_SERVER_URL=https://jam.etify.example.com corepack pnpm build:site
+firebase deploy --only hosting
+```
 
 `build:site` packages the extension first, so each deploy publishes the zips and `downloads/extension.json` with the version from `web/extension/package.json`. The Extension page polls that file and offers the update when it's newer than the installed one. Bump that version to make an update show.
+
+`https://etify-3c7ec.firebaseapp.com` serves the same site; `index.html` redirects it to `web.app` so there is one origin. Both are in the extension's `SITE_ORIGINS`. A custom domain added in the Firebase console must be added there too, and to the Listen Together server's `JAM_ALLOWED_ORIGINS`.
+
+The Listen Together server (`backend/`) is a Go WebSocket service and cannot run on Firebase Hosting. Run it on Cloud Run, Render (`backend/render.yaml`) or a VPS (`backend/deploy/`), and pass its URL as `VITE_PARTY_SERVER_URL`.
 
 ## Checks
 

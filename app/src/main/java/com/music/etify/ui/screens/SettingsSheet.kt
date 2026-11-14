@@ -1805,7 +1805,7 @@ fun SettingsScreen(
                     append("Developer")
                 }
                 append("  ")
-                withLink(LinkAnnotation.Url("https://etify.example.com/", linkStyles)) {
+                withLink(LinkAnnotation.Url("https://etify-3c7ec.web.app/", linkStyles)) {
                     append("Website")
                 }
                 append("\n~YouTube Music & Listen Together Backend")

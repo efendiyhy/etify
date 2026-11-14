@@ -1,8 +1,8 @@
 /** The web player's production origin. */
-export const PRODUCTION_ORIGIN = 'https://etify.example.com';
+export const PRODUCTION_ORIGIN = 'https://etify-3c7ec.web.app';
 
-/** The same site at its Cloudflare Pages address (the production branch's deploy). */
-const PAGES_ORIGIN = 'https://etify.pages.dev';
+/** The same site at Firebase Hosting's second default address. */
+const PAGES_ORIGIN = 'https://etify-3c7ec.firebaseapp.com';
 
 /** The Vite dev server (web/app/vite.config.ts pins the port). */
 const DEV_ORIGIN = 'http://localhost:5173';
@@ -12,7 +12,7 @@ const DEV_ORIGIN = 'http://localhost:5173';
  * this list, and it becomes externally_connectable (Chromium), the relay's
  * content-script matches (Firefox) and the DNR rules' initiatorDomains.
  *
- * etify.example.com and its pages.dev address always, and the dev server too except in a store build
+ * etify-3c7ec.web.app and etify-3c7ec.firebaseapp.com always, and the dev server too except in a store build
  * (ETIFY_STORE_BUILD=1), so a published extension never answers a page on
  * localhost. ETIFY_SITE_ORIGINS (comma-separated) replaces the list. The
  * first origin is the one the popup and homepage_url link to.
