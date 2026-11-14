@@ -1,10 +1,14 @@
 # Maintainers
 
-This document lists the maintainers responsible for BitChord.
+This document lists the maintainers responsible for Etify.
 
 | Maintainer | GitHub | Responsibilities |
 |---|---|---|
-| Kushagra Singh | [@kushagrasinghx](https://github.com/kushagrasinghx) | Project creator, core architecture, release management, and PR reviews |
+| efendiyhy | [@efendiyhy](https://github.com/efendiyhy) | Etify maintainer, release management, and PR reviews |
+
+## Original project
+
+Etify is a fork of [BitChord](https://github.com/kushagrasinghx/BitChord), created by Kushagra Singh ([@kushagrasinghx](https://github.com/kushagrasinghx)). The contributors listed below include those who worked on BitChord before the fork.
 
 ## Responsibilities
 
