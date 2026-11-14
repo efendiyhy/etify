@@ -81,12 +81,12 @@
   --systemSecondary-onDark: #ffffffa3;
   --systemTertiary-onDark: #ffffff66;
 
-  --keyColor: #d60017;
-  --keyColor-rgb: 214, 0, 23;
-  --keyColor-rollover: #a20000;
-  --keyColor-pressed: #bb0000;
-  --keyColorBG: #d60017;
-  --selectionColor: #d60017;
+  --keyColor: #7c5ce0;
+  --keyColor-rgb: 124, 92, 224;
+  --keyColor-rollover: #6a4bcf;
+  --keyColor-pressed: #5e40c0;
+  --keyColorBG: #9b7bf5;
+  --selectionColor: #9b7bf5;
   --keyColor-focus-color: rgba(var(--keyColor-rgb), 0.6);
 
   --systemRed: #ff3b30;
@@ -164,12 +164,12 @@
     --systemQuaternary: #ffffff1a;
     --systemQuinary: #ffffff0d;
 
-    --keyColor: #fa586a;
-    --keyColor-rgb: 250, 88, 106;
-    --keyColor-rollover: #ff5f7a;
-    --keyColor-pressed: #ff4661;
-    --keyColorBG: #fa233b;
-    --selectionColor: #c11b2e;
+    --keyColor: #b9a3ff;
+    --keyColor-rgb: 185, 163, 255;
+    --keyColor-rollover: #c9b8ff;
+    --keyColor-pressed: #a78bfa;
+    --keyColorBG: #8b6cf0;
+    --selectionColor: #6b4fd1;
 
     --systemRed: #ff453a;
     --systemGreen: #32d74b;

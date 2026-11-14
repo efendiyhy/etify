@@ -6,8 +6,8 @@
 
 **Pemutar musik YouTube yang lebih indah, di semua perangkatmu.**
 
-[![Rilis terbaru](https://img.shields.io/github/v/release/efendiyhy/etify?style=for-the-badge&labelColor=0d1117&color=FA233B)](https://github.com/efendiyhy/etify/releases)
-[![Lisensi](https://img.shields.io/github/license/efendiyhy/etify?style=for-the-badge&labelColor=0d1117&color=FA233B)](LICENSE)
+[![Rilis terbaru](https://img.shields.io/github/v/release/efendiyhy/etify?style=for-the-badge&labelColor=0d1117&color=8B6CF0)](https://github.com/efendiyhy/etify/releases)
+[![Lisensi](https://img.shields.io/github/license/efendiyhy/etify?style=for-the-badge&labelColor=0d1117&color=8B6CF0)](LICENSE)
 
 [Unduh](#unduh) · [Fitur](#fitur) · [Platform](#platform) · [Build sendiri](#build-dari-source) · [Kredit](#kredit) · [Lisensi](#lisensi)
 
