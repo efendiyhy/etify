@@ -44,6 +44,7 @@ export function AppShell() {
   const bannerDismissed = useUi((s) => s.installBannerDismissed);
   const dismissBanner = useUi((s) => s.dismissInstallBanner);
   const fullScreen = useUi((s) => s.fullScreen);
+  const sidebarCollapsed = useUi((s) => s.sidebarCollapsed);
 
   let banner = null;
   if (mobile) {
@@ -83,7 +84,10 @@ export function AppShell() {
       <div className="relative grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:px-2 max-sm:block">
         <TopBar />
         <MobileTopBar />
-        <div className="relative grid min-h-0 gap-2 sm:grid-cols-[var(--web-navigation-width)_minmax(0,1fr)_auto] max-sm:block max-sm:h-full">
+        <div
+          className="relative grid min-h-0 gap-2 transition-[grid-template-columns] duration-200 ease-out sm:grid-cols-[var(--library-width)_minmax(0,1fr)_auto] max-sm:block max-sm:h-full"
+          style={{ '--library-width': sidebarCollapsed ? '80px' : 'var(--web-navigation-width)' } as React.CSSProperties}
+        >
           <Sidebar />
           <main
             id="scrollable-page"
