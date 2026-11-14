@@ -8,6 +8,11 @@ name: Android APK
 # each build installs over the last. Without them the run makes a one-off key
 # for this build only: the APK installs, but the next build's cannot update it
 # in place (uninstall first). Add the secrets to make updates work.
+#
+# Releasing: run this workflow by hand with "release" ticked, or push a tag
+# like v1.9.2. The APKs are then published as a GitHub Release tagged with the
+# app's versionName (build.gradle.kts), named the way the app's own update
+# check looks for them: Etify-v1.9.2.apk (universal) and Etify-v1.9.2_<abi>.apk.
 on:
   push:
     branches: [main]
@@ -16,7 +21,16 @@ on:
       - '**.md'
       - '.github/workflows/web.yml'
       - '.github/workflows/deploy-web.yml'
+    tags: ['v*']
   workflow_dispatch:
+    inputs:
+      release:
+        description: 'Publish the APKs as a GitHub Release'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
 
 concurrency:
   group: android-apk-${{ github.ref }}
@@ -82,9 +96,45 @@ jobs:
       - name: Build release APK
         run: ./gradlew assembleProdRelease
 
+      - name: Name the APKs
+        id: apks
+        run: |
+          VERSION=$(sed -n 's/^extra\["etifyVersionName"\] = "\(.*\)"$/\1/p' build.gradle.kts)
+          [ -n "$VERSION" ] || { echo "::error::No etifyVersionName in build.gradle.kts"; exit 1; }
+          mkdir -p dist
+          for apk in app/build/outputs/apk/prod/release/*.apk; do
+            abi=$(basename "$apk" .apk | sed -e 's/^app-prod-//' -e 's/-release$//')
+            if [ "$abi" = "universal" ] || [ "$abi" = "app-prod-release" ] || [ -z "$abi" ]; then
+              cp "$apk" "dist/Etify-v$VERSION.apk"
+            else
+              cp "$apk" "dist/Etify-v${VERSION}_$abi.apk"
+            fi
+          done
+          ls -l dist
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: etify-android-apk
-          path: app/build/outputs/apk/prod/release/*.apk
+          path: dist/*.apk
           if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.apks.outputs.version }}
+        run: |
+          TAG="v$VERSION"
+          NOTES="Etify $TAG for Android. Install Etify-$TAG.apk (works on every phone), or the one for your phone's ABI."
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            NOTES="$NOTES
+
+          Signed with a one-off key: uninstall an earlier Etify before installing this one."
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.apk --clobber
+          else
+            gh release create "$TAG" dist/*.apk --title "Etify $TAG" --notes "$NOTES" --target "$GITHUB_SHA"
+          fi
