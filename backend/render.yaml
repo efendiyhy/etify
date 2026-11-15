@@ -23,6 +23,9 @@ services:
     healthCheckPath: /healthz
     numInstances: 1
     envVars:
+      # The web player's origins: browsers are refused unless named here.
+      - key: JAM_ALLOWED_ORIGINS
+        value: "https://etify-3c7ec.web.app,https://etify-3c7ec.firebaseapp.com,http://localhost:5173"
       - key: JAM_MAX_MEMBERS
         value: "5"
       - key: JAM_STATE_HEARTBEAT_MS
