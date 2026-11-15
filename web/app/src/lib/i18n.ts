@@ -15,6 +15,7 @@ export const LANGUAGES: { code: Lang; name: string }[] = [
 const en = {
   'greeting.morning': 'Good morning',
   'greeting.afternoon': 'Good afternoon',
+  'greeting.lateAfternoon': 'Good afternoon',
   'greeting.evening': 'Good evening',
   'greeting.night': 'Good night',
 
@@ -165,7 +166,8 @@ export type I18nKey = keyof typeof en;
 const id: Record<I18nKey, string> = {
   'greeting.morning': 'Selamat pagi',
   'greeting.afternoon': 'Selamat siang',
-  'greeting.evening': 'Selamat sore',
+  'greeting.lateAfternoon': 'Selamat sore',
+  'greeting.evening': 'Selamat malam',
   'greeting.night': 'Selamat malam',
 
   'nav.home': 'Beranda',
