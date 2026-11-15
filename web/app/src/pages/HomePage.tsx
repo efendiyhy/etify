@@ -8,7 +8,8 @@ import { LoadError, LoadMoreError, NeedsExtension } from '@/components/music/Sta
 import { useHome, useLibrary, useYouTubeReady } from '@/data/music/queries';
 import type { Track } from '@/data/music/types';
 import { HomeSkeleton } from '@/skeletons/PageSkeletons';
-import { greeting } from '@/lib/greeting';
+import { greetingKey } from '@/lib/greeting';
+import { useT } from '@/lib/i18n';
 import { useNickname } from '@/state/profile';
 import { ShelfSkeleton } from '@/skeletons/ShelfSkeleton';
 
@@ -68,6 +69,9 @@ export default function HomePage() {
   const home = useHome();
   const recent = useRecentlyPlayed();
   const nick = useNickname();
+  const t = useT();
+  const greeting = t(greetingKey());
+  const heading = nick ? `${greeting}, ${nick}` : greeting;
   const sentinel = useRef<HTMLDivElement>(null);
 
   // Loads the next shelves before the bottom comes into view; after a failed
@@ -88,7 +92,7 @@ export default function HomePage() {
   if (missing) {
     return (
       <>
-        <PageHeader title={nick ? `${greeting()}, ${nick}` : greeting()} />
+        <PageHeader title={heading} />
         <NeedsExtension />
       </>
     );
@@ -97,7 +101,7 @@ export default function HomePage() {
   if (home.isError && !home.data) {
     return (
       <>
-        <PageHeader title={nick ? `${greeting()}, ${nick}` : greeting()} />
+        <PageHeader title={heading} />
         <LoadError error={home.error} onRetry={() => void home.refetch()} />
       </>
     );
@@ -110,7 +114,7 @@ export default function HomePage() {
     .filter((shelf) => !(recent.length > 0 && shelf.title.trim().toLowerCase() === RECENT_TITLE.toLowerCase()));
   return (
     <>
-      <PageHeader title={nick ? `${greeting()}, ${nick}` : greeting()} />
+      <PageHeader title={heading} />
       <QuickPicks tracks={recent} />
       {recent.length > 0 && <TrackShelf title={RECENT_TITLE} to="/library/recent" tracks={recent} source={RECENT_SOURCE} />}
       <Shelves shelves={shelves} />

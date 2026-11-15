@@ -1,4 +1,8 @@
+import { SlidersHorizontal } from 'lucide-react';
 import { useState } from 'react';
+import { PrefetchLink } from '@/components/PrefetchLink';
+import { useT } from '@/lib/i18n';
+import { useEqualizer } from '@/playback/equalizer';
 import {
   BackwardIcon,
   ForwardIcon,
@@ -43,6 +47,8 @@ export function PlayerBar() {
   const repeat = usePlayer((s) => s.repeat);
   const { togglePlay, next, previous, toggleShuffle, cycleRepeat } = usePlayer.getState();
   const [volumeOpen, setVolumeOpen] = useState(false);
+  const eqOn = useEqualizer((s) => s.enabled);
+  const t = useT();
 
   return (
     <div
@@ -102,6 +108,10 @@ export function PlayerBar() {
         <button className={fading} aria-label="Lyrics" aria-pressed={sidePanel === 'lyrics'} onClick={() => toggleSidePanel('lyrics')}>
           {sidePanel === 'lyrics' ? <LyricsActiveIcon size={18} /> : <LyricsIcon size={18} />}
         </button>
+        {/* The equaliser's page; lit while it is shaping the sound. */}
+        <PrefetchLink to="/settings/equalizer" className={fading} aria-label={t('eq.title')} title={t('eq.title')} aria-pressed={eqOn}>
+          <SlidersHorizontal size={17} strokeWidth={2} />
+        </PrefetchLink>
         <button className={fading} aria-label="Up Next" aria-pressed={sidePanel === 'up-next'} onClick={() => toggleSidePanel('up-next')}>
           <UpNextIcon size={18} />
         </button>

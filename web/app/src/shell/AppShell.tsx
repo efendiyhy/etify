@@ -9,6 +9,7 @@ import { PrefetchLink } from '@/components/PrefetchLink';
 import { config } from '@/config';
 import { useExtension } from '@/extension/useExtension';
 import { isMobileBrowser } from '@/lib/platform';
+import { useT } from '@/lib/i18n';
 import { useUi } from '@/state/ui';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { Banner, bannerButtonClass } from './Banner';
@@ -45,16 +46,17 @@ export function AppShell() {
   const dismissBanner = useUi((s) => s.dismissInstallBanner);
   const fullScreen = useUi((s) => s.fullScreen);
   const sidebarCollapsed = useUi((s) => s.sidebarCollapsed);
+  const t = useT();
 
   let banner = null;
   if (mobile) {
     banner = (
       <Banner
-        title="Etify is better in the app."
-        detail="Phone browsers can’t run the Etify extension. The Android app has everything."
+        title={t('banner.appTitle')}
+        detail={t('banner.appDetail')}
         action={
           <a className={bannerButtonClass} href={config.androidAppUrl} target="_blank" rel="noreferrer">
-            Get the App
+            {t('banner.getApp')}
           </a>
         }
       />
@@ -62,11 +64,11 @@ export function AppShell() {
   } else if (extension.state === 'missing' && !bannerDismissed) {
     banner = (
       <Banner
-        title="Play YouTube Music with the Etify extension."
-        detail="Playback, YouTube Music sign-in, Spotify and Discord need the extension. Addons and lyrics work without it."
+        title={t('banner.extTitle')}
+        detail={t('banner.extDetail')}
         action={
           <PrefetchLink className={bannerButtonClass} to="/extension">
-            Get the Extension
+            {t('common.getExtension')}
           </PrefetchLink>
         }
         onDismiss={dismissBanner}

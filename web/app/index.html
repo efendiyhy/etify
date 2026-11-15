@@ -5,6 +5,17 @@
     <script>
       // Firebase serves the site on two hosts. Keep one canonical origin so sign-ins and
       // saved settings live in one place; the extension trusts both (web/extension/site.config.ts).
+      // The theme from Settings › Appearance, before anything paints (state/appearance.ts keeps it after).
+      try {
+        var pref = localStorage.getItem('etify:theme');
+        var dark = pref === 'dark' || (pref !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+        var lang = localStorage.getItem('etify:language');
+        if (lang) document.documentElement.lang = lang;
+      } catch (e) {
+        document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
       if (location.hostname === 'etify-3c7ec.firebaseapp.com') location.replace('https://etify-3c7ec.web.app' + location.pathname + location.search + location.hash);
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />

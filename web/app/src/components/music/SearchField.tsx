@@ -1,4 +1,5 @@
 import { Search, X } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useSuggestions } from '@/data/music/queries';
@@ -26,6 +27,7 @@ export function SearchField({
   variant?: 'field' | 'pill';
 }) {
   const pill = variant === 'pill';
+  const t = useT();
   const [value, setValue] = useState(initial);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -83,7 +85,7 @@ export function SearchField({
           className={`w-full rounded-pill type-body text-primary [&::-webkit-search-cancel-button]:hidden ${pill ? 'h-12 border border-transparent bg-panel-elevated pr-11 pl-12 placeholder:text-secondary outline-none transition-[border-color] hover:border-quaternary focus:border-primary' : 'h-[38px] border border-search-border bg-page pt-1.5 pr-[30px] pb-[5px] pl-7 placeholder:text-tertiary'}`}
           type="search"
           value={value}
-          placeholder={pill ? 'Search songs, artists, albums' : 'Artists, Songs, Lyrics, and More'}
+          placeholder={pill ? t('search.placeholder') : 'Artists, Songs, Lyrics, and More'}
           aria-label="Search"
           role="combobox"
           aria-expanded={showList}

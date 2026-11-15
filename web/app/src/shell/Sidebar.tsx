@@ -7,27 +7,27 @@ import { HomeIcon, NewIcon, SearchIcon, AllPlaylistsIcon, type NavIconProps } fr
 import { Artwork } from '@/components/music/Artwork';
 import { hrefFor } from '@/components/music/links';
 import { playList } from '@/components/music/play';
-import { LIBRARY_SECTIONS } from '@/data/music/library';
 import { useLibrary, useLibraryPlaylists, useSignedIn } from '@/data/music/queries';
 import type { Track } from '@/data/music/types';
 import { useSpotifyPlaylists } from '@/data/spotify/queries';
 import { useExtensionUpdate } from '@/extension/useExtensionUpdate';
 import { useSpotifySignedIn } from '@/extension/useSpotifyAuth';
 import { useYtAuth } from '@/extension/useYtAuth';
+import { useT, type I18nKey } from '@/lib/i18n';
 import { useUi } from '@/state/ui';
 import { AccountButton } from './AccountButton';
 
 interface NavItem {
   to: string;
-  label: string;
+  label: I18nKey;
   Icon: (props: NavIconProps) => React.ReactNode;
 }
 
 /** Only in the phone's drawer: on a wider screen the top bar carries Home and Search. */
 const PHONE_NAV: NavItem[] = [
-  { to: '/home', label: 'Home', Icon: HomeIcon },
-  { to: '/search', label: 'Search', Icon: SearchIcon },
-  { to: '/new', label: 'New', Icon: NewIcon },
+  { to: '/home', label: 'nav.home', Icon: HomeIcon },
+  { to: '/search', label: 'nav.search', Icon: SearchIcon },
+  { to: '/new', label: 'nav.new', Icon: NewIcon },
 ];
 
 const RECENT_LIMIT = 6;
@@ -68,6 +68,7 @@ function useRecentTracks(): Track[] {
 }
 
 function RecentlyPlayed({ narrow, onNavigate }: { narrow: boolean; onNavigate: () => void }) {
+  const t = useT();
   const tracks = useRecentTracks();
   if (tracks.length === 0) return null;
   const shown = tracks.slice(0, RECENT_LIMIT);
@@ -77,9 +78,9 @@ function RecentlyPlayed({ narrow, onNavigate }: { narrow: boolean; onNavigate: (
         <div className="mx-auto my-2 h-px w-8 bg-quaternary" aria-hidden="true" />
       ) : (
         <h2 className={sectionHeader}>
-          <span>Recently Played</span>
+          <span>{t('library.recent')}</span>
           <PrefetchLink to="/library/recent" className="type-callout-emphasized text-secondary hover:text-primary hover:underline" onClick={onNavigate}>
-            Show all
+            {t('common.showAll')}
           </PrefetchLink>
         </h2>
       )}
@@ -150,28 +151,29 @@ function Playlists({ narrow, onNavigate }: { narrow: boolean; onNavigate: () => 
   const spotifySignedIn = useSpotifySignedIn();
   const playlists = useLibraryPlaylists();
   const spotify = useSpotifyPlaylists();
+  const t = useT();
   if (!signedIn && !spotifySignedIn) return null;
   return (
     <section aria-label="Playlists">
-      {narrow ? <div className="mx-auto my-2 h-px w-8 bg-quaternary" aria-hidden="true" /> : <h2 className={sectionHeader}>Playlists</h2>}
+      {narrow ? <div className="mx-auto my-2 h-px w-8 bg-quaternary" aria-hidden="true" /> : <h2 className={sectionHeader}>{t('library.playlists')}</h2>}
       <ul className="flex flex-col gap-0.5">
         {signedIn && (
           <>
-            <PlaylistRow to="/library/playlists" name={LIBRARY_SECTIONS.playlists.title} kind="YouTube Music" all narrow={narrow} onNavigate={onNavigate} />
+            <PlaylistRow to="/library/playlists" name={t('library.allPlaylists')} kind="YouTube Music" all narrow={narrow} onNavigate={onNavigate} />
             {playlists.data?.map((playlist) => (
-              <PlaylistRow key={playlist.id} to={hrefFor(playlist) ?? '/library/playlists'} name={playlist.title} kind="Playlist" narrow={narrow} onNavigate={onNavigate} />
+              <PlaylistRow key={playlist.id} to={hrefFor(playlist) ?? '/library/playlists'} name={playlist.title} kind={t('library.playlist')} narrow={narrow} onNavigate={onNavigate} />
             ))}
           </>
         )}
         {spotifySignedIn && (
           <>
-            <PlaylistRow to="/spotify" end name="All Spotify Playlists" kind="Spotify" all narrow={narrow} onNavigate={onNavigate} />
+            <PlaylistRow to="/spotify" end name={t('library.allSpotify')} kind="Spotify" all narrow={narrow} onNavigate={onNavigate} />
             {spotify.data?.map((playlist) => (
               <PlaylistRow
                 key={playlist.id}
                 to={`/spotify/playlist/${encodeURIComponent(playlist.id)}`}
                 name={playlist.name}
-                kind="Spotify playlist"
+                kind={t('library.spotifyPlaylist')}
                 narrow={narrow}
                 onNavigate={onNavigate}
               />
@@ -185,16 +187,17 @@ function Playlists({ narrow, onNavigate }: { narrow: boolean; onNavigate: () => 
 
 /** Before there is an account to read: what the panel will hold, and where to start. */
 function EmptyLibrary({ onNavigate }: { onNavigate: () => void }) {
+  const t = useT();
   return (
     <div className="mx-2 mt-3 rounded-lg bg-panel-elevated p-4">
-      <p className="type-body-emphasized">Your playlists and recent plays</p>
-      <p className="mt-1 type-callout text-secondary">Install the Etify extension and sign in to YouTube Music to see them here.</p>
+      <p className="type-body-emphasized">{t('library.emptyTitle')}</p>
+      <p className="mt-1 type-callout text-secondary">{t('library.emptyDetail')}</p>
       <PrefetchLink
         to="/extension"
         className="mt-3 inline-block rounded-pill bg-primary px-4 py-1.5 type-callout-emphasized text-page hover:scale-[1.03]"
         onClick={onNavigate}
       >
-        Get the Extension
+        {t('common.getExtension')}
       </PrefetchLink>
     </div>
   );
@@ -214,6 +217,7 @@ export function Sidebar() {
   const close = () => setDrawerOpen(false);
   // The account row only when there is an account control to show; on a phone it also holds Settings.
   const hasAccount = useYtAuth().state === 'ready';
+  const t = useT();
 
   return (
     <>
@@ -237,8 +241,8 @@ export function Sidebar() {
           {narrow ? (
             <button
               className="mx-auto mt-3 mb-1 grid size-12 place-items-center rounded-md text-secondary transition-colors hover:bg-panel-elevated hover:text-primary"
-              aria-label="Expand Your Library"
-              title="Expand Your Library"
+              aria-label={t('library.expand')}
+              title={t('library.expand')}
               onClick={toggleSidebar}
             >
               <PanelLeftOpen size={22} strokeWidth={2} />
@@ -247,12 +251,12 @@ export function Sidebar() {
             <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-1">
               <div className="flex items-center gap-2 text-secondary">
                 <Library size={24} strokeWidth={2} />
-                <h2 className="type-body-emphasized">Your Library</h2>
+                <h2 className="type-body-emphasized">{t('library.title')}</h2>
               </div>
               <button
                 className="grid size-8 place-items-center rounded-full text-secondary transition-colors hover:bg-panel-elevated hover:text-primary max-sm:hidden"
-                aria-label="Collapse Your Library"
-                title="Collapse Your Library"
+                aria-label={t('library.collapse')}
+                title={t('library.collapse')}
                 onClick={toggleSidebar}
               >
                 <PanelLeftClose size={20} strokeWidth={2} />
@@ -267,7 +271,7 @@ export function Sidebar() {
                 <li key={to}>
                   <PrefetchNavLink to={to} className={item} onClick={close}>
                     <Icon size={24} className={icon} />
-                    <span className={navLabel}>{label}</span>
+                    <span className={navLabel}>{t(label)}</span>
                   </PrefetchNavLink>
                 </li>
               ))}
@@ -284,7 +288,7 @@ export function Sidebar() {
                 <span className={icon}>
                   <MdOutlineExtension size={18} />
                 </span>
-                <span className={navLabel}>Etify Extension</span>
+                <span className={navLabel}>{t('nav.extension')}</span>
                 {update.state === 'available' && (
                   <span className="ml-auto rounded-[10px] bg-key px-[7px] py-0.5 type-subhead-emphasized text-white" title={`Version ${update.latest.version} is available`}>
                     Update
@@ -296,8 +300,8 @@ export function Sidebar() {
                 <PrefetchNavLink
                   to="/settings"
                   className="ml-auto grid size-7 flex-none place-items-center rounded-nav text-secondary hover:bg-quinary hover:text-primary aria-[current=page]:bg-quinary aria-[current=page]:text-primary sm:hidden"
-                  aria-label="Settings"
-                  title="Settings"
+                  aria-label={t('nav.settings')}
+                  title={t('nav.settings')}
                   onClick={close}
                 >
                   <Settings size={17} strokeWidth={1.9} />
@@ -313,12 +317,12 @@ export function Sidebar() {
           href="https://ek-instrumentation.com"
           target="_blank"
           rel="noreferrer"
-          title={narrow ? 'Developed by EK-Instrumentation' : undefined}
-          aria-label={narrow ? 'Developed by EK-Instrumentation' : undefined}
+          title={narrow ? `${t('common.developedBy')} EK-Instrumentation` : undefined}
+          aria-label={narrow ? `${t('common.developedBy')} EK-Instrumentation` : undefined}
         >
           {!narrow && (
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="type-[500_11px/14px] tracking-[0.04em] text-tertiary uppercase">Developed by</span>
+              <span className="type-[500_11px/14px] tracking-[0.04em] text-tertiary uppercase">{t('common.developedBy')}</span>
               <span className="truncate type-body-emphasized text-primary">EK-Instrumentation</span>
             </span>
           )}

@@ -1,4 +1,7 @@
 import { PageHeader } from '@/components/PageHeader';
+import { greetingKey } from '@/lib/greeting';
+import { useT } from '@/lib/i18n';
+import { useNickname } from '@/state/profile';
 import { SkeletonBlock, SkeletonLine } from '@/components/Skeleton';
 import { DetailSkeleton } from './DetailSkeleton';
 import { ShelfSkeleton } from './ShelfSkeleton';
@@ -9,9 +12,13 @@ import { ShelfSkeleton } from './ShelfSkeleton';
 const sectionTitle = 'mx-(--body-gutter) mt-3';
 
 export function HomeSkeleton() {
+  // The same greeting Home itself opens with, so the heading doesn't change when the feed arrives.
+  const t = useT();
+  const nick = useNickname();
+  const greeting = t(greetingKey());
   return (
     <div aria-busy="true">
-      <PageHeader title="Home" />
+      <PageHeader title={nick ? `${greeting}, ${nick}` : greeting} />
       <ShelfSkeleton kind="editorial" />
       <ShelfSkeleton kind="tracks" />
       <ShelfSkeleton kind="square" />

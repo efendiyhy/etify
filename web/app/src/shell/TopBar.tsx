@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { PrefetchLink, PrefetchNavLink } from '@/components/PrefetchLink';
 import { LogoMark } from '@/components/icons/LogoMark';
 import { SearchField } from '@/components/music/SearchField';
+import { useT } from '@/lib/i18n';
 import { useExtensionUpdate } from '@/extension/useExtensionUpdate';
 
 const roundButton =
@@ -32,6 +33,7 @@ function SearchPill() {
 
 /** The bar across the top: the mark, Home and the search pill, then the extension and settings. */
 export function TopBar() {
+  const t = useT();
   const update = useExtensionUpdate();
   return (
     <header className="grid h-(--topBarHeight) grid-cols-[minmax(0,1fr)_minmax(0,560px)_minmax(0,1fr)] items-center gap-2 px-2 max-sm:hidden">
@@ -40,20 +42,20 @@ export function TopBar() {
         <span className="type-[800_20px/24px] tracking-[-0.02em] max-md:hidden">Etify</span>
       </PrefetchLink>
       <div className="flex items-center gap-2">
-        <PrefetchNavLink to="/home" className={roundButton} aria-label="Home" title="Home">
+        <PrefetchNavLink to="/home" className={roundButton} aria-label={t('nav.home')} title={t('nav.home')}>
           <Home size={24} strokeWidth={2} />
         </PrefetchNavLink>
         <SearchPill />
-        <PrefetchNavLink to="/new" className={roundButton} aria-label="New" title="New">
+        <PrefetchNavLink to="/new" className={roundButton} aria-label={t('nav.new')} title={t('nav.new')}>
           <LayoutGrid size={22} strokeWidth={2} />
         </PrefetchNavLink>
       </div>
       <div className="flex items-center gap-1 justify-self-end pr-2">
-        <PrefetchNavLink to="/extension" className={iconButton} aria-label="Etify Extension" title="Etify Extension">
+        <PrefetchNavLink to="/extension" className={iconButton} aria-label={t('nav.extension')} title={t('nav.extension')}>
           <MdOutlineExtension size={20} />
           {update.state === 'available' && <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-key" aria-label="Update available" />}
         </PrefetchNavLink>
-        <PrefetchNavLink to="/settings" className={iconButton} aria-label="Settings" title="Settings">
+        <PrefetchNavLink to="/settings" className={iconButton} aria-label={t('nav.settings')} title={t('nav.settings')}>
           <Settings size={19} strokeWidth={1.9} />
         </PrefetchNavLink>
       </div>

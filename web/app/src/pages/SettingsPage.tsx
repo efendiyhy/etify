@@ -1,4 +1,4 @@
-import { ChevronRight, Users } from 'lucide-react';
+import { ChevronRight, SlidersHorizontal, Users } from 'lucide-react';
 import { lazy, Suspense, useState, type ComponentType, type ReactNode } from 'react';
 import { MdOutlineExtension } from 'react-icons/md';
 import { SiApplemusic, SiDiscord, SiSpotify, SiYoutubemusic } from 'react-icons/si';
@@ -11,7 +11,10 @@ import { useParty } from '@/party/useParty';
 import { useHistorySettings } from '@/playback/historyReporting';
 import { Select } from '@/components/Select';
 import { AUTOMIX_BARS } from '@/playback/automix/choices';
-import { greeting } from '@/lib/greeting';
+import { greetingKey } from '@/lib/greeting';
+import { LANGUAGES, useLanguage, useT, type Lang, type Translate } from '@/lib/i18n';
+import { useEqualizer, EQ_PRESETS } from '@/playback/equalizer';
+import { useAppearance, type ThemePref } from '@/state/appearance';
 import { CROSSFADE_CHOICES, usePlayer } from '@/state/player';
 import { NICKNAME_MAX, useProfile } from '@/state/profile';
 import { AppleMusicIntegration, AppleMusicToggles, CanvasToggle, DiscordIntegration, LyricSourcesAccess, SpotifyIntegration, Toggle } from './IntegrationSettings';
@@ -42,13 +45,13 @@ function LinkRow({ to, icon, title, value }: { to: string; icon?: ReactNode; tit
   );
 }
 
-function youtubeText(auth: ReturnType<typeof useYtAuth>): string {
-  if (auth.state === 'checking') return 'Checking…';
-  if (auth.state === 'unavailable') return 'Needs the extension';
+function youtubeText(auth: ReturnType<typeof useYtAuth>, t: Translate): string {
+  if (auth.state === 'checking') return t('yt.checking');
+  if (auth.state === 'unavailable') return t('common.needsExtension');
   const { browserSignedIn, connected, active } = auth.auth;
-  if (!browserSignedIn) return 'Not signed in';
-  if (!connected) return 'Disconnected';
-  return active ? useProfile.getState().nickname.trim() || active.name : 'Signed in';
+  if (!browserSignedIn) return t('yt.notSignedIn');
+  if (!connected) return t('yt.disconnected');
+  return active ? useProfile.getState().nickname.trim() || active.name : t('yt.signedIn');
 }
 
 /**
@@ -70,6 +73,13 @@ export default function SettingsPage() {
   const { setAutoplay, setCrossfade, setAutomix, setAutomixBars, setShowNerdStats } = usePlayer.getState();
   const [lyrics, setLyrics] = useState(false);
   const nickname = useProfile((s) => s.nickname);
+  const t = useT();
+  const lang = useLanguage((s) => s.lang);
+  const setLang = useLanguage((s) => s.setLang);
+  const theme = useAppearance((s) => s.theme);
+  const setTheme = useAppearance((s) => s.setTheme);
+  const eqEnabled = useEqualizer((s) => s.enabled);
+  const eqPreset = useEqualizer((s) => s.preset);
   const setNickname = useProfile((s) => s.setNickname);
   const present = extension.state === 'present';
   const discordText =
@@ -83,12 +93,12 @@ export default function SettingsPage() {
 
   return (
     <div className={settingsUi.centered}>
-      <PageHeader title="Settings" />
+      <PageHeader title={t('settings.title')} />
       <div className={settingsUi.body}>
-        <h2 className={settingsUi.sectionHeader}>Profile</h2>
+        <h2 className={settingsUi.sectionHeader}>{t('settings.profile')}</h2>
         <section className={settingsUi.group}>
           <label className={settingsUi.controlRow}>
-            <span>Nickname</span>
+            <span>{t('settings.nickname')}</span>
             <input
               className={settingsUi.input}
               placeholder="e.g. Yamata"
@@ -100,21 +110,43 @@ export default function SettingsPage() {
           </label>
         </section>
         <p className={settingsUi.footer}>
-          Shown in Home’s greeting{nickname.trim() ? ` (“${greeting()}, ${nickname.trim()}”)` : ''}, on the account button and to others in Listen Together,
-          instead of your Google account’s name. Saved on this browser.
+          {t('settings.nicknameFooter')}
+          {nickname.trim() ? ` (“${t(greetingKey())}, ${nickname.trim()}”)` : ''}
         </p>
 
-        <h2 className={settingsUi.sectionHeader}>Account & Integrations</h2>
+        <h2 className={settingsUi.sectionHeader}>{t('settings.appearance')}</h2>
+        <section className={settingsUi.group}>
+          <label className={settingsUi.controlRow}>
+            <span>{t('settings.theme')}</span>
+            <Select<ThemePref>
+              label={t('settings.theme')}
+              value={theme}
+              options={[
+                { value: 'system', label: t('settings.themeSystem') },
+                { value: 'light', label: t('settings.themeLight') },
+                { value: 'dark', label: t('settings.themeDark') },
+              ]}
+              onChange={setTheme}
+            />
+          </label>
+          <label className={settingsUi.controlRow}>
+            <span>{t('settings.language')}</span>
+            <Select<Lang> label={t('settings.language')} value={lang} options={LANGUAGES.map((l) => ({ value: l.code, label: l.name }))} onChange={setLang} />
+          </label>
+        </section>
+        <p className={settingsUi.footer}>{t('settings.appearanceFooter')}</p>
+
+        <h2 className={settingsUi.sectionHeader}>{t('settings.account')}</h2>
         <section className={settingsUi.group}>
           <div className={settingsUi.integration}>
             <Glyph Icon={SiYoutubemusic} color="#ffffff" ink="#ff0033" />
             <span className={settingsUi.integrationName}>YouTube Music</span>
-            <span className={settingsUi.value}>{youtubeText(yt)}</span>
+            <span className={settingsUi.value}>{youtubeText(yt, t)}</span>
           </div>
           <div className={settingsUi.integration}>
             <Glyph Icon={SiSpotify} color="#1ed760" />
             <span className={settingsUi.integrationName}>Spotify</span>
-            {present ? <SpotifyIntegration /> : <span className={settingsUi.value}>Needs the extension</span>}
+            {present ? <SpotifyIntegration /> : <span className={settingsUi.value}>{t('common.needsExtension')}</span>}
           </div>
           {present && discord.state === 'ready' && discord.discord.available && (
             <LinkRow to="/settings/discord" icon={<Glyph Icon={SiDiscord} color="#5865f2" />} title="Discord" value={discordText} />
@@ -123,16 +155,16 @@ export default function SettingsPage() {
             to="/extension"
             icon={<Glyph Icon={MdOutlineExtension} color="#636366" />}
             title="Etify Extension"
-            value={present ? `v${extension.extension.info.version}` : 'Not installed'}
+            value={present ? `v${extension.extension.info.version}` : t('common.notInstalled')}
           />
         </section>
         <section className={`${settingsUi.group} mt-3 empty:hidden`}>
           <Toggle
-            label="Share Listening Activity to YouTube"
+            label={t('settings.shareHistory')}
             detail={
               present && !extension.extension.info.capabilities.includes('yt.stats')
                 ? 'Update the Etify extension to share: this version can’t send plays to YouTube.'
-                : 'Songs you play here go to your YouTube Music history and shape its recommendations.'
+                : t('settings.shareHistoryDetail')
             }
             checked={shareHistory}
             onChange={setShareHistory}
@@ -145,37 +177,43 @@ export default function SettingsPage() {
           <div className={settingsUi.integration}>
             <Glyph Icon={SiApplemusic} color="#fa2d48" />
             <span className={settingsUi.integrationName}>Extension Access</span>
-            {present ? <AppleMusicIntegration /> : <span className={settingsUi.value}>Needs the extension</span>}
+            {present ? <AppleMusicIntegration /> : <span className={settingsUi.value}>{t('common.needsExtension')}</span>}
           </div>
           <AppleMusicToggles />
         </section>
         <p className={settingsUi.footer}>From Apple Music’s public pages. No Apple Music account or sign-in needed.</p>
 
-        <h2 className={settingsUi.sectionHeader}>Listen Together</h2>
+        <h2 className={settingsUi.sectionHeader}>{t('settings.listenTogether')}</h2>
         <section className={settingsUi.group}>
           <LinkRow
             to="/settings/listen-together"
             icon={<Glyph Icon={Users} color="#fa2d48" />}
-            title="Listen Together"
-            value={party.code ? `In party ${party.code}` : 'Listen in sync with friends'}
+            title={t('settings.listenTogether')}
+            value={party.code ? t('settings.inParty', { code: party.code }) : t('settings.listenTogetherValue')}
           />
         </section>
 
-        <h2 className={settingsUi.sectionHeader}>Playback</h2>
+        <h2 className={settingsUi.sectionHeader}>{t('settings.playback')}</h2>
         <section className={settingsUi.group}>
+          <LinkRow
+            to="/settings/equalizer"
+            icon={<Glyph Icon={SlidersHorizontal} color="#8b6cf0" />}
+            title={t('settings.equalizer')}
+            value={eqEnabled ? (EQ_PRESETS.find((p) => p.id === eqPreset)?.name[lang] ?? t('eq.custom')) : t('common.off')}
+          />
           <Toggle
-            label="AutoPlay"
-            detail="When the queue ends, keep playing similar music."
+            label={t('settings.autoplay')}
+            detail={t('settings.autoplayDetail')}
             checked={autoplay}
             onChange={setAutoplay}
           />
           <label className={settingsUi.controlRow}>
-            <span>Crossfade</span>
+            <span>{t('settings.crossfade')}</span>
             <Select<number | 'automix'>
-              label="Crossfade"
+              label={t('settings.crossfade')}
               value={automix ? 'automix' : crossfadeSec}
               options={[
-                ...CROSSFADE_CHOICES.map((seconds) => ({ value: seconds, label: seconds === 0 ? 'Off' : `${seconds} seconds` })),
+                ...CROSSFADE_CHOICES.map((seconds) => ({ value: seconds, label: seconds === 0 ? t('common.off') : t('settings.seconds', { n: seconds }) })),
                 { value: 'automix', label: 'Automix' },
               ]}
               onChange={(value) => (value === 'automix' ? setAutomix(true) : setCrossfade(value))}
@@ -183,18 +221,18 @@ export default function SettingsPage() {
           </label>
           {automix && (
             <label className={settingsUi.controlRow}>
-              <span>Blend Length</span>
+              <span>{t('settings.blendLength')}</span>
               <Select
-                label="Blend Length"
+                label={t('settings.blendLength')}
                 value={automixBars}
-                options={AUTOMIX_BARS.map((bars) => ({ value: bars, label: `Up to ${bars} bars` }))}
+                options={AUTOMIX_BARS.map((bars) => ({ value: bars, label: t('settings.upToBars', { n: bars }) }))}
                 onChange={setAutomixBars}
               />
             </label>
           )}
           <Toggle
-            label="Show Stats for Nerds"
-            detail="Codec, bitrate and sample rate under the artist in the full-screen player, and what Automix is doing."
+            label={t('settings.nerdStats')}
+            detail={t('settings.nerdStatsDetail')}
             checked={showNerdStats}
             onChange={setShowNerdStats}
           />
@@ -207,18 +245,18 @@ export default function SettingsPage() {
           </p>
         )}
 
-        <h2 className={settingsUi.sectionHeader}>Lyrics</h2>
+        <h2 className={settingsUi.sectionHeader}>{t('settings.lyrics')}</h2>
         <section className={settingsUi.group}>
           <button className={`${settingsUi.integrationPlain} ${settingsUi.linkRow}`} onClick={() => setLyrics(true)}>
-            <span className={settingsUi.integrationName}>Lyric Sources</span>
+            <span className={settingsUi.integrationName}>{t('settings.lyricSources')}</span>
             <span className={settingsUi.value}>
-              Order, sources, syllable timing
+              {t('settings.lyricSourcesValue')}
               <ChevronRight size={16} />
             </span>
           </button>
           <div className={settingsUi.integrationPlain}>
-            <span className={settingsUi.integrationName}>Lyric Sources Access</span>
-            {present ? <LyricSourcesAccess /> : <span className={settingsUi.value}>Needs the extension</span>}
+            <span className={settingsUi.integrationName}>{t('settings.lyricAccess')}</span>
+            {present ? <LyricSourcesAccess /> : <span className={settingsUi.value}>{t('common.needsExtension')}</span>}
           </div>
         </section>
       </div>

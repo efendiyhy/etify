@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { PrefetchLink } from '@/components/PrefetchLink';
+import { useT } from '@/lib/i18n';
 import { shelfHeader, shelfKinds, shelfList, shelfSection, type ShelfKind } from '@/components/shelf';
 import type { MusicItem, Shelf, Track } from '@/data/music/types';
 import type { QueueSource } from '@/playback/queue/timeline';
@@ -83,6 +84,7 @@ export function ShelfScroller({ kind, children }: { kind: ShelfKind; children: R
 
 /** A shelf's title, with "Show all" at the far end when there's a page behind it. */
 function ShelfTitle({ title, to }: { title: string; to?: string | null }) {
+  const t = useT();
   return (
     <div className={`${shelfHeader} justify-between gap-4`}>
       <h2 className="min-w-0 truncate type-title-2-emphasized">
@@ -96,7 +98,7 @@ function ShelfTitle({ title, to }: { title: string; to?: string | null }) {
       </h2>
       {to && (
         <PrefetchLink to={to} className="flex-none type-callout-emphasized text-secondary hover:text-primary hover:underline">
-          Show all
+          {t('common.showAll')}
         </PrefetchLink>
       )}
     </div>

@@ -1,4 +1,5 @@
 import type { DetectedExtension } from '@etify/shared/bridge';
+import { attachEqualizer, useEqualizer } from '@/playback/equalizer';
 import { create } from 'zustand';
 import type { Track } from '@/data/music/types';
 import { extensionQueryKey } from '@/extension/useExtension';
@@ -204,6 +205,7 @@ function getDecks(): Promise<Deck[]> {
       return deck;
     });
     applyVolumes();
+    syncEqualizer();
     // For browser-driven tests: the elements aren't in the DOM.
     if (import.meta.env.DEV) Object.defineProperty(window, '__bcAudio', { get: getAudio, configurable: true });
     return decks;
@@ -288,6 +290,9 @@ function ensureAutomix(): Promise<AutomixGraph | null> {
       }),
       (snap) => usePlayer.setState({ automixState: snap }),
     );
+    // The equaliser sits after the volume, on its way to the speakers.
+    built.master.disconnect();
+    attachEqualizer(built.ctx, built.master, built.ctx.destination);
     graph = built;
     applyVolumes();
     if (import.meta.env.DEV) Object.assign(window, { __bcAutomix: built, __bcAnalyzer: analyzer });
@@ -351,6 +356,22 @@ function automixHandoff() {
   afterTrackStarted();
   intent();
 }
+
+/**
+ * The equaliser needs the decks routed through Web Audio: turning it on builds
+ * the same graph Automix uses (once; it stays for the page). Off, the graph's
+ * equaliser passes the sound through unchanged.
+ */
+function syncEqualizer() {
+  if (!useEqualizer.getState().enabled || !decks) return;
+  void ensureAutomix().then((g) => {
+    if (g) void g.ctx.resume();
+  });
+}
+
+useEqualizer.subscribe((state, previous) => {
+  if (state.enabled && !previous.enabled) syncEqualizer();
+});
 
 /** Starts or stops the mix loop to match the setting; the first start builds the graph. */
 function syncAutomix() {

@@ -5,6 +5,9 @@ import { createBrowserRouter, RouterProvider } from 'react-router';
 import { queryClient } from '@/lib/queryClient';
 import { routes } from '@/routes';
 import '@/styles/global.css';
+// Applies the theme and language choices and keeps them in step with the system.
+import '@/state/appearance';
+import '@/lib/i18n';
 
 const router = createBrowserRouter(routes);
 
