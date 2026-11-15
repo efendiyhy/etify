@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { usePlayer } from '@/state/player';
+import { getAudio, usePlayer } from '@/state/player';
+import { openMiniPlayer } from './MiniPlayerWindow';
 import { useUi } from '@/state/ui';
 
 /** Typing in a field shouldn't trigger the player. */
@@ -25,9 +26,11 @@ function focusSearch(navigate: ReturnType<typeof useNavigate>) {
 }
 
 /**
- * The web player's shortcuts, which Etify matches (report §8): Space
- * play/pause; ⌘/Ctrl+→ / ← next/previous; ⌘/Ctrl+↑ / ↓ volume; ⌘/Ctrl+F or
- * "/" focuses search; Esc closes the full-screen player, else the side panel.
+ * The web player's shortcuts (ShortcutsDialog lists them; "?" opens it):
+ * Space play/pause; ⌘/Ctrl+→ / ← next/previous; ⌘/Ctrl+↑ / ↓ volume; → / ←
+ * seek 10 s; M mute; S shuffle; R repeat; L lyrics; Q Up Next; F full screen;
+ * I mini player; ⌘/Ctrl+F or "/" search; Esc closes the full-screen player,
+ * else the side panel.
  */
 export function useKeyboardShortcuts() {
   const navigate = useNavigate();
@@ -52,6 +55,39 @@ export function useKeyboardShortcuts() {
       if (event.key === '/' && !command) {
         event.preventDefault();
         return focusSearch(navigate);
+      }
+      if (event.key === '?' && !command) {
+        event.preventDefault();
+        const ui = useUi.getState();
+        return ui.setShortcutsOpen(!ui.shortcutsOpen);
+      }
+      if (!command && !event.shiftKey) {
+        const ui = useUi.getState();
+        switch (event.key.toLowerCase()) {
+          case 'm':
+            return player.toggleMute();
+          case 's':
+            return player.toggleShuffle();
+          case 'r':
+            return player.cycleRepeat();
+          case 'l':
+            return ui.toggleSidePanel('lyrics');
+          case 'q':
+            return ui.toggleSidePanel('up-next');
+          case 'f':
+            if (player.nowPlaying) ui.setFullScreen(!ui.fullScreen);
+            return;
+          case 'i':
+            return void openMiniPlayer();
+          case 'arrowright':
+          case 'arrowleft': {
+            const audio = getAudio();
+            if (!audio || !Number.isFinite(audio.duration)) return;
+            event.preventDefault();
+            const step = event.key === 'ArrowRight' ? 10 : -10;
+            return player.seek(Math.min(Math.max(0, audio.currentTime + step), audio.duration - 0.5));
+          }
+        }
       }
       if (event.key === 'Escape') {
         const ui = useUi.getState();

@@ -16,6 +16,7 @@ import { Banner, bannerButtonClass } from './Banner';
 import { MobileTopBar } from './MobileTopBar';
 import { PlayerBar } from './PlayerBar';
 import { SidePanel } from './SidePanel';
+import { ShortcutsDialog } from './ShortcutsDialog';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 
@@ -106,6 +107,7 @@ export function AppShell() {
       </div>
       <PlayerBar />
       {banner}
+      <ShortcutsDialog />
       {fullScreen && (
         <Suspense fallback={null}>
           <FullScreenPlayer />

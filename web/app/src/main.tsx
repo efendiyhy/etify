@@ -8,8 +8,14 @@ import '@/styles/global.css';
 // Applies the theme and language choices and keeps them in step with the system.
 import '@/state/appearance';
 import '@/lib/i18n';
+import { startListeningStats } from '@/playback/listeningStats';
+import { startQueueHistory } from '@/playback/queueHistory';
 
 const router = createBrowserRouter(routes);
+
+// Counts what you listen to (the Stats page) and keeps the queues you play (Up Next › History).
+startListeningStats();
+startQueueHistory();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

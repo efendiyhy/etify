@@ -1,6 +1,11 @@
 import { party, useParty } from '@/party/listenTogether';
 import { Infinity as InfinityIcon, MoreHorizontal, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { createPlaylist } from '@/data/music/api';
+import { useSignedIn } from '@/data/music/queries';
+import { useT } from '@/lib/i18n';
+import { queryClient } from '@/lib/queryClient';
+import { useQueueHistory, type PastQueue } from '@/playback/queueHistory';
 import { Menu, MenuHeader, MenuItem, MenuSeparator } from '@/components/Menu';
 import { Artwork } from '@/components/music/Artwork';
 import { formatDuration } from '@/components/music/links';
@@ -102,8 +107,60 @@ function Row({
   );
 }
 
+/** "3 hours ago" and so on, in the page's language. */
+function ago(time: number, lang: string): string {
+  const minutes = Math.round((Date.now() - time) / 60_000);
+  const format = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' });
+  if (minutes < 60) return format.format(-minutes, 'minute');
+  if (minutes < 60 * 24) return format.format(-Math.round(minutes / 60), 'hour');
+  return format.format(-Math.round(minutes / 60 / 24), 'day');
+}
+
+/** The queues played before, newest first; one tap plays one again. */
+function QueueHistory() {
+  const t = useT();
+  const queues = useQueueHistory((s) => s.queues);
+  const lang = document.documentElement.lang || 'en';
+  const play = (queue: PastQueue) => usePlayer.getState().playTracks(queue.tracks, 0, queue.source);
+  if (queues.length === 0) {
+    return <p className="flex flex-1 items-center justify-center px-8 pb-20 text-center type-callout text-secondary">{t('queue.historyEmpty')}</p>;
+  }
+  return (
+    <ol className="min-h-0 flex-1 overflow-y-auto px-2 pb-[120px] scrollbar-soft">
+      {queues.map((queue) => (
+        <li key={queue.id}>
+          <button
+            className="group/row grid w-full grid-cols-[48px_minmax(0,1fr)] items-center gap-3 rounded-row px-2.5 py-2 text-start hover:bg-quinary"
+            onClick={() => play(queue)}
+            title={t('queue.restore')}
+          >
+            <span className="grid grid-cols-2 overflow-hidden rounded-[6px]">
+              {queue.tracks.slice(0, 4).map((track, i) => (
+                <Artwork key={`${track.videoId}-${i}`} src={track.thumbnail} displayWidth={24} radius="0" />
+              ))}
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate type-body text-primary">{queue.source.title}</span>
+              <span className="truncate type-callout text-secondary">
+                {t('queue.songs', { n: queue.tracks.length })} · {ago(queue.playedAt, lang)}
+              </span>
+            </span>
+          </button>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+const tab =
+  'rounded-pill px-3 py-1 type-callout-emphasized text-secondary transition-colors hover:text-primary aria-selected:bg-primary aria-selected:text-page';
+
 /** Apple's Up Next (report §7), over the three-tier queue: what's next, then AutoPlay's section. */
 export function UpNext() {
+  const t = useT();
+  const signedIn = useSignedIn();
+  const [view, setView] = useState<'next' | 'history'>('next');
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const queue = usePlayer((s) => s.queue);
   const index = usePlayer((s) => s.index);
   const localAutoplay = usePlayer((s) => s.autoplay);
@@ -127,6 +184,23 @@ export function UpNext() {
   const afterAutoplay = upcoming.filter(({ at }) => at >= autoplayAt);
   const playingFrom = queue[index]?.source?.title;
 
+  /** The song playing and everything after it, as a new private YouTube Music playlist. */
+  const saveQueue = async () => {
+    if (!signedIn) return setSaveStatus(t('queue.signIn'));
+    const name = window.prompt(t('queue.saveName'), playingFrom ?? 'Etify');
+    if (!name?.trim()) return;
+    const videoIds = queue.slice(Math.max(0, index)).map((entry) => entry.track.videoId);
+    setSaveStatus(t('queue.saving'));
+    try {
+      await createPlaylist(name.trim(), videoIds, 'Saved from the queue in Etify');
+      await queryClient.invalidateQueries({ queryKey: ['music', 'library'] });
+      setSaveStatus(t('queue.saved'));
+    } catch (error) {
+      setSaveStatus(t('queue.saveFailed', { error: error instanceof Error ? error.message : String(error) }));
+    }
+    setTimeout(() => setSaveStatus(null), 6000);
+  };
+
   const rows = (items: typeof upcoming) =>
     items.map(({ entry, at }) => (
       <Row
@@ -145,8 +219,15 @@ export function UpNext() {
   return (
     <>
       <div className="flex items-center gap-1.5 px-5 pt-[23px] pb-3">
-        <h3 className="flex-1 type-title-2-emphasized">Up Next</h3>
-        {canClear && (
+        <div className="flex flex-1 items-center gap-1" role="tablist">
+          <button className={tab} role="tab" aria-selected={view === 'next'} onClick={() => setView('next')}>
+            {t('queue.upNext')}
+          </button>
+          <button className={tab} role="tab" aria-selected={view === 'history'} onClick={() => setView('history')}>
+            {t('queue.history')}
+          </button>
+        </div>
+        {view === 'next' && canClear && (
           <button className="mr-1 type-title-3 text-key" onClick={clearUpNext}>
             Clear
           </button>
@@ -174,9 +255,18 @@ export function UpNext() {
             <MenuItem checked={automix} onSelect={() => (close(), setAutomix(true))}>
               Automix
             </MenuItem>
+            <MenuSeparator />
+            <MenuItem disabled={queue.length === 0} onSelect={() => (close(), void saveQueue())}>
+              {t('queue.save')}
+            </MenuItem>
           </Menu>
         )}
       </div>
+      {saveStatus && <p className="px-5 pb-2 type-callout text-key">{saveStatus}</p>}
+      {view === 'history' ? (
+        <QueueHistory />
+      ) : (
+        <>
       {playingFrom && <p className="truncate px-5 pb-2 type-callout text-secondary">Playing from {playingFrom}</p>}
 
       {upcoming.length === 0 ? (
@@ -201,6 +291,8 @@ export function UpNext() {
             </>
           )}
         </div>
+      )}
+        </>
       )}
     </>
   );

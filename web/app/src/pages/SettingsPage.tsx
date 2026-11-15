@@ -13,6 +13,7 @@ import { Select } from '@/components/Select';
 import { AUTOMIX_BARS } from '@/playback/automix/choices';
 import { greetingKey } from '@/lib/greeting';
 import { LANGUAGES, useLanguage, useT, type Lang, type Translate } from '@/lib/i18n';
+import { useVisualizer } from '@/playback/analyser';
 import { useEqualizer, EQ_PRESETS } from '@/playback/equalizer';
 import { useAppearance, type ThemePref } from '@/state/appearance';
 import { CROSSFADE_CHOICES, usePlayer } from '@/state/player';
@@ -79,6 +80,8 @@ export default function SettingsPage() {
   const theme = useAppearance((s) => s.theme);
   const setTheme = useAppearance((s) => s.setTheme);
   const eqEnabled = useEqualizer((s) => s.enabled);
+  const vizEnabled = useVisualizer((s) => s.enabled);
+  const setVizEnabled = useVisualizer((s) => s.setEnabled);
   const eqPreset = useEqualizer((s) => s.preset);
   const setNickname = useProfile((s) => s.setNickname);
   const present = extension.state === 'present';
@@ -201,6 +204,7 @@ export default function SettingsPage() {
             title={t('settings.equalizer')}
             value={eqEnabled ? (EQ_PRESETS.find((p) => p.id === eqPreset)?.name[lang] ?? t('eq.custom')) : t('common.off')}
           />
+          <Toggle label={t('viz.title')} detail={t('viz.detail')} checked={vizEnabled} onChange={setVizEnabled} />
           <Toggle
             label={t('settings.autoplay')}
             detail={t('settings.autoplayDetail')}

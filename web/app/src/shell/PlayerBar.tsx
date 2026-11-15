@@ -1,4 +1,6 @@
-import { SlidersHorizontal } from 'lucide-react';
+import { PictureInPicture2, SlidersHorizontal } from 'lucide-react';
+import { miniPlayerSupported, openMiniPlayer } from './MiniPlayerWindow';
+import { Visualizer } from './Visualizer';
 import { useState } from 'react';
 import { PrefetchLink } from '@/components/PrefetchLink';
 import { useT } from '@/lib/i18n';
@@ -52,16 +54,18 @@ export function PlayerBar() {
 
   return (
     <div
-      className="z-[calc(var(--z-web-chrome)-1)] grid h-(--playerBarHeight) grid-cols-[minmax(180px,1fr)_minmax(320px,2fr)_minmax(180px,1fr)] items-center gap-4 bg-canvas px-4 max-sm:hidden"
+      className="relative z-[calc(var(--z-web-chrome)-1)] grid h-(--playerBarHeight) grid-cols-[minmax(180px,1fr)_minmax(320px,2fr)_minmax(180px,1fr)] items-center gap-4 bg-canvas px-4 max-sm:hidden"
       role="region"
       aria-label="Player"
     >
-      <div className="flex min-w-0 items-center gap-2">
+      {/* The spectrum, faint, behind the whole bar. */}
+      <Visualizer bars={96} opacity={0.18} className="absolute inset-x-0 bottom-0 h-full" />
+      <div className="relative flex min-w-0 items-center gap-2">
         <NowPlayingTrack />
         <FavoriteButton videoId={videoId} className={`${action} flex-none`} />
       </div>
 
-      <div className="flex min-w-0 flex-col items-center gap-1">
+      <div className="relative flex min-w-0 flex-col items-center gap-1">
         <div className="flex items-center gap-4">
           <button className={toggle} aria-label="Shuffle" aria-pressed={shuffle} onClick={toggleShuffle}>
             <ShuffleIcon size={24} />
@@ -112,6 +116,11 @@ export function PlayerBar() {
         <PrefetchLink to="/settings/equalizer" className={fading} aria-label={t('eq.title')} title={t('eq.title')} aria-pressed={eqOn}>
           <SlidersHorizontal size={17} strokeWidth={2} />
         </PrefetchLink>
+        {miniPlayerSupported() && (
+          <button className={fading} aria-label={t('mini.open')} title={t('mini.open')} onClick={() => void openMiniPlayer()}>
+            <PictureInPicture2 size={17} strokeWidth={2} />
+          </button>
+        )}
         <button className={fading} aria-label="Up Next" aria-pressed={sidePanel === 'up-next'} onClick={() => toggleSidePanel('up-next')}>
           <UpNextIcon size={18} />
         </button>

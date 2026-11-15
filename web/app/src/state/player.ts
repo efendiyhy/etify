@@ -1,4 +1,5 @@
 import type { DetectedExtension } from '@etify/shared/bridge';
+import { tapAnalyser, useVisualizer } from '@/playback/analyser';
 import { attachEqualizer, useEqualizer } from '@/playback/equalizer';
 import { create } from 'zustand';
 import type { Track } from '@/data/music/types';
@@ -292,7 +293,11 @@ function ensureAutomix(): Promise<AutomixGraph | null> {
     );
     // The equaliser sits after the volume, on its way to the speakers.
     built.master.disconnect();
-    attachEqualizer(built.ctx, built.master, built.ctx.destination);
+    const post = new GainNode(built.ctx, { gain: 1 });
+    post.connect(built.ctx.destination);
+    attachEqualizer(built.ctx, built.master, post);
+    // The visualizer reads the finished sound.
+    tapAnalyser(built.ctx, post);
     graph = built;
     applyVolumes();
     if (import.meta.env.DEV) Object.assign(window, { __bcAutomix: built, __bcAnalyzer: analyzer });
@@ -358,18 +363,21 @@ function automixHandoff() {
 }
 
 /**
- * The equaliser needs the decks routed through Web Audio: turning it on builds
- * the same graph Automix uses (once; it stays for the page). Off, the graph's
- * equaliser passes the sound through unchanged.
+ * The equaliser and the visualizer need the decks routed through Web Audio:
+ * either one on builds the same graph Automix uses (once; it stays for the
+ * page). Off, the graph's equaliser passes the sound through unchanged.
  */
 function syncEqualizer() {
-  if (!useEqualizer.getState().enabled || !decks) return;
+  if (!(useEqualizer.getState().enabled || useVisualizer.getState().enabled) || !decks) return;
   void ensureAutomix().then((g) => {
     if (g) void g.ctx.resume();
   });
 }
 
 useEqualizer.subscribe((state, previous) => {
+  if (state.enabled && !previous.enabled) syncEqualizer();
+});
+useVisualizer.subscribe((state, previous) => {
   if (state.enabled && !previous.enabled) syncEqualizer();
 });
 

@@ -16,6 +16,9 @@ interface UiState {
   /** The library panel folded to a rail of artwork, remembered on this browser. */
   sidebarCollapsed: boolean;
   toggleSidebar: () => void;
+  /** The keyboard shortcuts list ("?"). */
+  shortcutsOpen: boolean;
+  setShortcutsOpen: (open: boolean) => void;
   /** The extension install banner, dismissed for this tab only. */
   installBannerDismissed: boolean;
   dismissInstallBanner: () => void;
@@ -51,6 +54,8 @@ export const useUi = create<UiState>()((set) => ({
       }
       return { sidebarCollapsed };
     }),
+  shortcutsOpen: false,
+  setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
   installBannerDismissed: sessionStorage.getItem(BANNER_KEY) === '1',
   dismissInstallBanner: () => {
     sessionStorage.setItem(BANNER_KEY, '1');

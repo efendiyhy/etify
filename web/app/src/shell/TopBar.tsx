@@ -1,4 +1,4 @@
-import { Home, LayoutGrid, Settings } from 'lucide-react';
+import { BarChart3, Home, LayoutGrid, Settings } from 'lucide-react';
 import { MdOutlineExtension } from 'react-icons/md';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { PrefetchLink, PrefetchNavLink } from '@/components/PrefetchLink';
@@ -51,6 +51,9 @@ export function TopBar() {
         </PrefetchNavLink>
       </div>
       <div className="flex items-center gap-1 justify-self-end pr-2">
+        <PrefetchNavLink to="/stats" className={iconButton} aria-label={t('stats.title')} title={t('stats.title')}>
+          <BarChart3 size={19} strokeWidth={1.9} />
+        </PrefetchNavLink>
         <PrefetchNavLink to="/extension" className={iconButton} aria-label={t('nav.extension')} title={t('nav.extension')}>
           <MdOutlineExtension size={20} />
           {update.state === 'available' && <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-key" aria-label="Update available" />}

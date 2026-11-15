@@ -1,4 +1,7 @@
-import { Maximize, Minimize, X } from 'lucide-react';
+import { Maximize, Minimize, Share2, X } from 'lucide-react';
+import { useT } from '@/lib/i18n';
+import { shareSongCard } from '@/lib/shareSong';
+import { Visualizer } from './Visualizer';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useLocation } from 'react-router';
 import {
@@ -135,6 +138,7 @@ const IDLE_MS = 3000;
  * beside the lyrics or Up Next, it takes the artwork's place at 16:9.
  */
 export function FullScreenPlayer() {
+  const t = useT();
   const nowPlaying = usePlayer((s) => s.nowPlaying);
   // The queue's row for what's playing: it carries the album and each artist's channel.
   const track = usePlayer((s) => {
@@ -246,6 +250,8 @@ export function FullScreenPlayer() {
       style={theater && playing && idle ? { cursor: 'none' } : undefined}
     >
       <MeshBackdrop artworkUrl={nowPlaying.artworkUrl} playing={playing} />
+      {/* The spectrum along the bottom edge, over the backdrop and under everything else. */}
+      {!theater && <Visualizer bars={112} opacity={0.4} className="absolute inset-x-0 bottom-0 h-[22vh]" />}
       {theater && (
         <div className="absolute inset-0 animate-fade-in bg-black">
           <VideoSurface fit="contain" className="size-full" />
@@ -362,6 +368,16 @@ export function FullScreenPlayer() {
               className="grid size-8 flex-none place-items-center rounded-full bg-quinary text-primary hover:bg-quaternary"
               size={18}
             />
+            {track && (
+              <button
+                className="grid size-8 flex-none place-items-center rounded-full bg-quinary text-primary hover:bg-quaternary"
+                aria-label={t('share.card')}
+                title={t('share.card')}
+                onClick={() => void shareSongCard(track)}
+              >
+                <Share2 size={16} strokeWidth={2.2} />
+              </button>
+            )}
             {track && (
               <TrackMenu
                 track={track}

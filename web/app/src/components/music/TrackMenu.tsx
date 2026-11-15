@@ -1,4 +1,6 @@
-import { ChevronLeft, ChevronRight, ListEnd, ListPlus, ListStart, MoreHorizontal, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ListEnd, ListPlus, ListStart, MoreHorizontal, Share2, Star } from 'lucide-react';
+import { useT } from '@/lib/i18n';
+import { shareSongCard } from '@/lib/shareSong';
 import { useCallback, useEffect, useState } from 'react';
 import { Menu, MenuHeader, MenuItem, MenuSeparator, type MenuPlacement } from '@/components/Menu';
 import {
@@ -77,6 +79,7 @@ function AccountItems({ track, onClose, onPlaylists }: { track: Track; onClose: 
 }
 
 function TrackMenuItems({ track, onClose }: { track: Track; onClose: () => void }) {
+  const t = useT();
   const [view, setView] = useState<'main' | 'playlists'>('main');
   const signedIn = useSignedIn();
   if (view === 'playlists') {
@@ -90,6 +93,9 @@ function TrackMenuItems({ track, onClose }: { track: Track; onClose: () => void 
       </MenuItem>
       <MenuItem icon={<ListEnd size={15} />} onSelect={() => (onClose(), addToQueue([track]))}>
         Add to Queue
+      </MenuItem>
+      <MenuItem icon={<Share2 size={15} />} onSelect={() => (onClose(), void shareSongCard(track))}>
+        {t('share.card')}
       </MenuItem>
       {signedIn && <AccountItems track={track} onClose={onClose} onPlaylists={() => setView('playlists')} />}
     </>
