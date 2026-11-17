@@ -26,6 +26,7 @@ import { BAND_COLORS, EqCanvas } from './equalizer/EqCanvas';
 import { FINISHES, Knob, Lcd, LedButton, RackUnit, Section } from './equalizer/hardware';
 import { HeadphonePickerBody } from './equalizer/HeadphonePicker';
 import { GainReductionMeters, MeterBridge } from './equalizer/Meters';
+import { PresetPicker } from './equalizer/PresetPicker';
 import { settingsUi } from './settingsStyles';
 
 const TYPES: FilterType[] = ['peaking', 'lowshelf', 'highshelf', 'tilt', 'highpass', 'lowpass', 'notch'];
@@ -328,7 +329,7 @@ export default function EqualizerPage() {
                     <span className="min-w-0 flex-1 truncate text-[13px]/[18px]">
                       {settings.enabled ? (presetOptions.find((o) => o.value === settings.preset)?.label ?? settings.preset) : t('common.off')}
                     </span>
-                    <Select<string> label={t('eq.preset')} value={settings.preset} options={presetOptions} onChange={store.setPreset} />
+                    <PresetPicker />
                   </div>
                   <span className="truncate text-[10px]/[13px] text-white/45">{t('eq.enableDetail')}</span>
                 </div>
