@@ -293,3 +293,20 @@
   --systemQuaternary: #ffffff2e;
   --systemQuinary: #ffffff1a;
 }
+
+/*
+ * The equaliser's studio rack: dark hardware whatever the page's appearance,
+ * with the purple key colour of the dark theme.
+ */
+[data-rack] {
+  color-scheme: dark;
+  --systemPrimary: #f1ecffeb;
+  --systemSecondary: #d9cff5a8;
+  --systemTertiary: #c9bdf06b;
+  --systemQuaternary: #ffffff1c;
+  --systemQuinary: #ffffff0f;
+  --keyColor: #b9a3ff;
+  --keyColor-rgb: 185, 163, 255;
+  --keyColorBG: #8b6cf0;
+  color: var(--systemPrimary);
+}

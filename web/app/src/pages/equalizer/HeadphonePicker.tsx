@@ -1,5 +1,5 @@
 import { Headphones, Loader2, Search, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useT } from '@/lib/i18n';
 import { headphoneIndex, headphoneProfile, searchHeadphones, type HeadphoneEntry } from '@/playback/dsp/autoeq';
 import { useMastering } from '@/playback/equalizer';
@@ -10,6 +10,13 @@ import { Strip } from './hardware';
  * correction EQ fills the bands (and is kept as a preset, "🎧 name").
  */
 export function HeadphonePicker({ onApplied }: { onApplied: (name: string) => void }) {
+  return <HeadphonePickerBody onApplied={onApplied} frame={(props) => <Strip {...props} free />} />;
+}
+
+type Frame = (props: { title: string; detail: string; on: boolean; onToggle?: (on: boolean) => void; children: ReactNode }) => ReactNode;
+
+/** The picker itself, inside whatever [frame] the page gives it (a strip, a rack section). */
+export function HeadphonePickerBody({ onApplied, frame }: { onApplied: (name: string) => void; frame: Frame }) {
   const t = useT();
   const [query, setQuery] = useState('');
   const [all, setAll] = useState<HeadphoneEntry[] | null>(null);
@@ -53,13 +60,12 @@ export function HeadphonePicker({ onApplied }: { onApplied: (name: string) => vo
   const store = useMastering.getState();
 
   return (
-    <Strip
-      title={t('autoeq.title')}
-      detail={t('autoeq.detail')}
-      free
-      on={headphone?.on ?? true}
-      onToggle={headphone ? store.toggleHeadphone : undefined}
-    >
+    frame({
+      title: t('autoeq.title'),
+      detail: t('autoeq.detail'),
+      on: headphone?.on ?? true,
+      onToggle: headphone ? store.toggleHeadphone : undefined,
+      children: (
       <div className="flex flex-col gap-1.5">
         {headphone && (
           <div
@@ -107,6 +113,7 @@ export function HeadphonePicker({ onApplied }: { onApplied: (name: string) => vo
           </ul>
         )}
       </div>
-    </Strip>
+      ),
+    })
   );
 }

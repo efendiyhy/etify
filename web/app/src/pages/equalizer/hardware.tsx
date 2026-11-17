@@ -150,31 +150,50 @@ export function Knob({ label, value, min, max, step = 0.1, unit = '', format, re
           else if ((e.key === 'Backspace' || e.key === 'Delete') && reset !== undefined) set(reset);
         }}
       >
-        <svg viewBox="0 0 64 64" width="100%" height="100%" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="100%" height="100%" aria-hidden="true" className="overflow-visible">
           <defs>
-            <radialGradient id={`${id}-cap`} cx="35%" cy="30%" r="75%">
-              <stop offset="0" stopColor="#5b5866" />
-              <stop offset="0.55" stopColor="#2c2a33" />
-              <stop offset="1" stopColor="#15141a" />
+            {/* Brushed aluminium: a bright top-left, a darker rim. */}
+            <radialGradient id={`${id}-cap`} cx="38%" cy="30%" r="78%">
+              <stop offset="0" stopColor="#fbfaff" />
+              <stop offset="0.45" stopColor="#c9c5d6" />
+              <stop offset="0.8" stopColor="#8d889c" />
+              <stop offset="1" stopColor="#5d5869" />
             </radialGradient>
+            <linearGradient id={`${id}-skirt`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#3b3646" />
+              <stop offset="1" stopColor="#0c0a12" />
+            </linearGradient>
+            <filter id={`${id}-glow`} x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="1.4" result="b" />
+              <feMerge>
+                <feMergeNode in="b" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
           </defs>
-          {/* Scale ticks around the knob. */}
+          {/* Scale ticks printed round the knob. */}
           {Array.from({ length: 11 }, (_, i) => {
             const a = START + (i / 10) * SWEEP;
-            const p = polar(c, c, 31.5, a);
-            const q = polar(c, c, 29.5, a);
-            return <line key={i} x1={p.x} y1={p.y} x2={q.x} y2={q.y} stroke="var(--systemTertiary)" strokeWidth="1" />;
+            const p = polar(c, c, 31.8, a);
+            const q = polar(c, c, i % 5 === 0 ? 28.6 : 29.8, a);
+            return <line key={i} x1={p.x} y1={p.y} x2={q.x} y2={q.y} stroke="var(--systemTertiary)" strokeWidth={i % 5 === 0 ? 1.4 : 1} />;
           })}
-          <path d={track} fill="none" stroke="var(--systemQuaternary)" strokeWidth="3.5" strokeLinecap="round" />
-          {fill && <path d={fill} fill="none" stroke={color ?? 'var(--keyColor)'} strokeWidth="3.5" strokeLinecap="round" />}
-          {/* The cap: knurled edge, then the domed top. */}
-          <circle cx={c} cy={c} r="21" fill="#0d0c10" />
-          <circle cx={c} cy={c} r="20" fill="none" stroke="#3a3842" strokeWidth="2" strokeDasharray="1.2 1.6" />
-          <circle cx={c} cy={c} r="17.5" fill={`url(#${id}-cap)`} stroke="#000" strokeOpacity="0.6" />
-          <line x1={base.x} y1={base.y} x2={tip.x} y2={tip.y} stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
+          {/* The LED ring: unlit track, lit arc. */}
+          <path d={track} fill="none" stroke="#000" strokeOpacity="0.55" strokeWidth="3.4" strokeLinecap="round" />
+          {fill && <path d={fill} fill="none" stroke={color ?? 'var(--keyColor)'} strokeWidth="3" strokeLinecap="round" filter={`url(#${id}-glow)`} />}
+          {/* Drop shadow, knurled skirt, then the domed metal cap. */}
+          <circle cx={c} cy={c + 1.6} r="22" fill="#000" opacity="0.45" />
+          <circle cx={c} cy={c} r="22" fill={`url(#${id}-skirt)`} />
+          <circle cx={c} cy={c} r="21" fill="none" stroke="#5a5466" strokeWidth="1.6" strokeDasharray="1 1.4" />
+          <circle cx={c} cy={c} r="17" fill={`url(#${id}-cap)`} stroke="#2a2633" strokeWidth="0.8" />
+          <circle cx={c} cy={c} r="12.5" fill="none" stroke="#fff" strokeOpacity="0.18" strokeWidth="0.6" />
+          <circle cx={c} cy={c} r="8" fill="none" stroke="#000" strokeOpacity="0.08" strokeWidth="0.6" />
+          {/* The pointer: an engraved line with a coloured tip. */}
+          <line x1={base.x} y1={base.y} x2={tip.x} y2={tip.y} stroke="#1b1822" strokeWidth="2.4" strokeLinecap="round" />
+          <circle cx={tip.x} cy={tip.y} r="1.6" fill={color ?? 'var(--keyColor)'} />
         </svg>
       </div>
-      <span id={id} className="type-[600_11px/14px] tabular-nums text-primary">
+      <span id={id} className="rounded-[3px] bg-black/35 px-1 font-mono whitespace-nowrap text-[10.5px]/[14px] tabular-nums text-primary shadow-[inset_0_1px_2px_rgb(0_0_0/0.6)]">
         {shown}
       </span>
       {/* Two lines kept for every label, so knobs in a row line up. */}
@@ -270,5 +289,183 @@ export function Strip({
         </div>
       )}
     </section>
+  );
+}
+
+// ---- The rack (pages/EqualizerPage.tsx) --------------------------------------------
+
+/** A faceplate's colours: top and bottom of its gradient, and its accent (LEDs, arcs, legends). */
+export interface Finish {
+  top: string;
+  bottom: string;
+  accent: string;
+}
+
+export const FINISHES = {
+  controller: { top: '#2b2735', bottom: '#17141f', accent: '#b9a3ff' },
+  violet: { top: '#3a2766', bottom: '#1d1236', accent: '#c4b0ff' },
+  orange: { top: '#2a2522', bottom: '#141110', accent: '#ff8a3d' },
+  gunmetal: { top: '#3d4049', bottom: '#1b1c22', accent: '#ffcf4a' },
+  teal: { top: '#1f2f3b', bottom: '#0f171f', accent: '#4fd1c5' },
+  burgundy: { top: '#45192a', bottom: '#200a13', accent: '#ff6b57' },
+  plum: { top: '#3b1d45', bottom: '#1c0c22', accent: '#ff7ad9' },
+  midnight: { top: '#232347', bottom: '#101028', accent: '#7aa8ff' },
+  bronze: { top: '#3a2e1d', bottom: '#1b150c', accent: '#ffb020' },
+} satisfies Record<string, Finish>;
+
+function Screw() {
+  return <span className="rack-screw block size-[11px] rounded-full" aria-hidden="true" />;
+}
+
+/**
+ * One device in the rack: ears with screws, a faceplate in its own finish,
+ * the maker's badge and model, and (when it has one) its power switch.
+ */
+export function RackUnit({
+  finish,
+  model,
+  name,
+  power,
+  onPower,
+  powerLabel,
+  extra,
+  children,
+}: {
+  finish: Finish;
+  /** The model number on the badge, e.g. "EQ-12". */
+  model: string;
+  name: string;
+  power?: boolean;
+  onPower?: (on: boolean) => void;
+  powerLabel?: string;
+  /** Controls in the badge row, after the name. */
+  extra?: ReactNode;
+  children: ReactNode;
+}) {
+  const style = { ['--face-top' as string]: finish.top, ['--face-bottom' as string]: finish.bottom, ['--accent' as string]: finish.accent };
+  return (
+    <section className="flex items-stretch" style={style} aria-label={`${model} ${name}`}>
+      <div className="rack-ear flex w-[22px] flex-none flex-col items-center justify-between rounded-l-[4px] py-2.5 max-sm:w-3 max-sm:[&>span]:hidden">
+        <Screw />
+        <Screw />
+      </div>
+      <div className="rack-face min-w-0 flex-1 px-3 pt-2 pb-3">
+        <header className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-black/40 pb-2 shadow-[0_1px_0_rgb(255_255_255/0.06)]">
+          <span className="flex items-baseline gap-2">
+            <span className="text-[11px]/[14px] font-black tracking-[0.28em] text-white/85 italic">ETIFY</span>
+            <span className="rounded-[3px] px-1.5 py-px text-[10px]/[14px] font-bold tracking-[0.12em]" style={{ background: finish.accent, color: '#120c1c' }}>
+              {model}
+            </span>
+          </span>
+          <span className="min-w-0 truncate text-[11px]/[14px] font-semibold tracking-[0.16em] text-white/70 uppercase">{name}</span>
+          <span className="flex-1" />
+          {extra}
+          {onPower && <PowerSwitch on={!!power} onToggle={onPower} label={powerLabel ?? name} />}
+        </header>
+        {children}
+      </div>
+      <div className="rack-ear flex w-[22px] flex-none flex-col items-center justify-between rounded-r-[4px] py-2.5 max-sm:w-3 max-sm:[&>span]:hidden">
+        <Screw />
+        <Screw />
+      </div>
+    </section>
+  );
+}
+
+/** A toggle switch with its power LED, as on a hardware unit. */
+export function PowerSwitch({ on, onToggle, label, disabled }: { on: boolean; onToggle: (on: boolean) => void; label: string; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={() => onToggle(!on)}
+      className="group flex flex-none items-center gap-1.5 disabled:opacity-40"
+    >
+      <span
+        className="size-2 rounded-full transition-[background-color,box-shadow]"
+        style={on ? { background: '#ff3b4e', boxShadow: '0 0 7px 2px #ff3b4e' } : { background: '#2a0d12', boxShadow: 'inset 0 1px 1px #000' }}
+      />
+      <span className="relative h-[22px] w-[13px] rounded-[3px] bg-[#0b0910] shadow-[inset_0_1px_3px_#000,0_1px_0_rgb(255_255_255/0.1)]">
+        <span
+          className={`absolute inset-x-[1.5px] h-[11px] rounded-[2px] bg-[linear-gradient(180deg,#f2f0f7,#8f8a9c)] shadow-[0_1px_2px_rgb(0_0_0/0.7)] transition-[top] ${on ? 'top-[1.5px]' : 'top-[9.5px]'}`}
+        />
+      </span>
+      <span className="text-[9px]/[10px] font-bold tracking-[0.14em] text-white/60 uppercase">Power</span>
+    </button>
+  );
+}
+
+/**
+ * A module inside a unit: its silkscreened name, its own power button, then
+ * its controls. Dimmed while off, like a bypassed processor.
+ */
+export function Section({
+  title,
+  detail,
+  on = true,
+  onToggle,
+  buttons,
+  children,
+  className = '',
+}: {
+  title: string;
+  detail?: string;
+  on?: boolean;
+  onToggle?: (on: boolean) => void;
+  buttons?: ReactNode;
+  children?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`rack-section flex min-w-0 flex-col rounded-[6px] p-2 ${className}`} title={detail}>
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <span className="min-w-0 truncate text-[10.5px]/[14px] font-bold tracking-[0.16em] uppercase" style={{ color: 'var(--accent)' }}>
+          {title}
+        </span>
+        {onToggle && <LedButton on={on} onToggle={onToggle} label={title} className="h-6 px-2" />}
+      </div>
+      {detail && <p className="mb-1.5 line-clamp-2 text-[10.5px]/[13px] text-white/55">{detail}</p>}
+      {buttons && <div className="mb-1.5 flex flex-wrap justify-center gap-1">{buttons}</div>}
+      {children && <div className={`mt-auto flex flex-wrap items-start justify-center gap-x-1 gap-y-2 transition-opacity ${on ? '' : 'opacity-45'}`}>{children}</div>}
+    </div>
+  );
+}
+
+/** A segmented LED meter, bottom to top: green, then amber, then red near the top. */
+export function LedMeter({ db, label, floor = -60, segments = 24, height = 132 }: { db: number; label: string; floor?: number; segments?: number; height?: number }) {
+  const lit = Math.round(Math.max(0, Math.min(1, (db - floor) / -floor)) * segments);
+  return (
+    <div className="flex flex-col items-center gap-1" role="meter" aria-label={label} aria-valuemin={floor} aria-valuemax={0} aria-valuenow={Math.round(db)}>
+      <div className="rack-screen flex flex-col-reverse gap-[2px] rounded-[3px] p-[3px]" style={{ height }}>
+        {Array.from({ length: segments }, (_, i) => {
+          const color = i >= segments - 2 ? '#ff3b4e' : i >= segments - 6 ? '#ffc23a' : '#3ddc84';
+          const on = i < lit;
+          return (
+            <span
+              key={i}
+              className="w-3 flex-1 rounded-[1px]"
+              style={on ? { background: color, boxShadow: `0 0 4px ${color}` } : { background: color, opacity: 0.12 }}
+            />
+          );
+        })}
+      </div>
+      <span className="text-[9px]/[10px] font-bold tracking-[0.12em] text-white/60 uppercase">{label}</span>
+    </div>
+  );
+}
+
+/** A small backlit readout: a label above, a value in a glowing display. */
+export function Lcd({ label, value, color, wide }: { label: string; value: string; color?: string; wide?: boolean }) {
+  return (
+    <div className={`flex flex-col gap-0.5 ${wide ? 'min-w-0 flex-1' : ''}`}>
+      <span className="text-[9px]/[10px] font-bold tracking-[0.12em] text-white/55 uppercase">{label}</span>
+      <span className="rack-lcd truncate rounded-[3px] px-2 py-1 text-[12px]/[16px] tabular-nums" style={color ? { ['--lcd' as string]: color } : undefined}>
+        {value}
+      </span>
+    </div>
   );
 }
