@@ -24,12 +24,29 @@ function requirePartyServer(mode: string): void {
   }
 }
 
+// This build's id: the commit on CI, else the time. The page compares it with
+// /version.json (written below) to notice a newer deploy.
+const BUILD_ID = (process.env.GITHUB_SHA?.slice(0, 7) ?? '') || `dev-${Date.now().toString(36)}`;
+const BUILD_TIME = new Date().toISOString();
+
 export default defineConfig(({ command, mode }) => {
   if (command === 'build') requirePartyServer(mode);
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'etify-version',
+        apply: 'build',
+        generateBundle() {
+          this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ id: BUILD_ID, time: BUILD_TIME }) });
+        },
+      },
+    ],
     define: {
       DEV_EXTENSION_ID: JSON.stringify(devExtensionId()),
+      __BUILD_ID__: JSON.stringify(BUILD_ID),
+      __BUILD_TIME__: JSON.stringify(BUILD_TIME),
     },
     resolve: {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },

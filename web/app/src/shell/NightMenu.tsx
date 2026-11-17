@@ -1,5 +1,6 @@
 import { Check, Mic2, Moon, Radio } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { Menu, MenuHeader, MenuItem, MenuSeparator, type MenuPlacement } from '@/components/Menu';
 import { useT } from '@/lib/i18n';
 import { djSupported, useDj, type DjEvery } from '@/playback/dj';
@@ -12,6 +13,7 @@ const MINUTES = [5, 15, 30, 45, 60, 90];
 /** The moon in the player: the sleep timer and the AI DJ. Lit while either is on. */
 export function NightMenu({ className, placement = 'above-end' }: { className: string; placement?: MenuPlacement }) {
   const t = useT();
+  const navigate = useNavigate();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const close = useCallback(() => setAnchor(null), []);
   const { endsAt, endOfTrack, remaining, start, startEndOfTrack, cancel } = useSleepTimer();
@@ -65,6 +67,7 @@ export function NightMenu({ className, placement = 'above-end' }: { className: s
                 </MenuItem>
               ))}
               <MenuItem onSelect={() => (dj.speakNow(), close())}>{t('dj.preview')}</MenuItem>
+              <MenuItem onSelect={() => (close(), void navigate('/settings/dj'))}>{t('dj.settings')}</MenuItem>
             </>
           ) : (
             <MenuItem disabled onSelect={() => {}}>

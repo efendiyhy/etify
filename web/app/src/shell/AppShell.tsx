@@ -11,6 +11,7 @@ import { config } from '@/config';
 import { useExtension } from '@/extension/useExtension';
 import { isMobileBrowser } from '@/lib/platform';
 import { useT } from '@/lib/i18n';
+import { reloadToLatest, startUpdateCheck, useAppUpdate } from '@/lib/version';
 import { useUi } from '@/state/ui';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { Banner, bannerButtonClass } from './Banner';
@@ -49,9 +50,25 @@ export function AppShell() {
   const fullScreen = useUi((s) => s.fullScreen);
   const sidebarCollapsed = useUi((s) => s.sidebarCollapsed);
   const t = useT();
+  useEffect(() => startUpdateCheck(), []);
+  const update = useAppUpdate();
 
   let banner = null;
-  if (mobile) {
+  if (update.available && !update.dismissed) {
+    // A newer deploy than this page: one click past every cache.
+    banner = (
+      <Banner
+        title={t('update.title')}
+        detail={t('update.detail')}
+        action={
+          <button className={bannerButtonClass} onClick={() => void reloadToLatest()}>
+            {t('update.reload')}
+          </button>
+        }
+        onDismiss={update.dismiss}
+      />
+    );
+  } else if (mobile) {
     banner = (
       <Banner
         title={t('banner.appTitle')}

@@ -1,4 +1,4 @@
-import { ChevronRight, SlidersHorizontal, Users } from 'lucide-react';
+import { ChevronRight, Radio, SlidersHorizontal, Users } from 'lucide-react';
 import { lazy, Suspense, useState, type ComponentType, type ReactNode } from 'react';
 import { MdOutlineExtension } from 'react-icons/md';
 import { SiApplemusic, SiDiscord, SiSpotify, SiYoutubemusic } from 'react-icons/si';
@@ -15,6 +15,8 @@ import { greetingKey } from '@/lib/greeting';
 import { LANGUAGES, useLanguage, useT, type Lang, type Translate } from '@/lib/i18n';
 import { useVisualizer } from '@/playback/analyser';
 import { presetLabel, useMastering } from '@/playback/equalizer';
+import { useDj } from '@/playback/dj';
+import { BUILD_ID, BUILD_TIME } from '@/lib/version';
 import { useAppearance, type ThemePref } from '@/state/appearance';
 import { CROSSFADE_CHOICES, usePlayer } from '@/state/player';
 import { NICKNAME_MAX, useProfile } from '@/state/profile';
@@ -74,6 +76,7 @@ export default function SettingsPage() {
   const { setAutoplay, setCrossfade, setAutomix, setAutomixBars, setShowNerdStats } = usePlayer.getState();
   const [lyrics, setLyrics] = useState(false);
   const nickname = useProfile((s) => s.nickname);
+  const djEnabled = useDj((s) => s.enabled);
   const t = useT();
   const lang = useLanguage((s) => s.lang);
   const setLang = useLanguage((s) => s.setLang);
@@ -204,6 +207,7 @@ export default function SettingsPage() {
             title={t('settings.equalizer')}
             value={eqEnabled ? presetLabel(eqPreset, lang, t('eq.custom')) : t('common.off')}
           />
+          <LinkRow to="/settings/dj" icon={<Glyph Icon={Radio} color="#ff8a3d" />} title={t('dj.title')} value={djEnabled ? t('autoeq.active') : t('common.off')} />
           <Toggle label={t('viz.title')} detail={t('viz.detail')} checked={vizEnabled} onChange={setVizEnabled} />
           <Toggle
             label={t('settings.autoplay')}
@@ -263,6 +267,9 @@ export default function SettingsPage() {
             {present ? <LyricSourcesAccess /> : <span className={settingsUi.value}>{t('common.needsExtension')}</span>}
           </div>
         </section>
+        <p className={`${settingsUi.footer} mt-8 text-center opacity-70`}>
+          {t('settings.version', { id: BUILD_ID, time: new Date(BUILD_TIME).toLocaleString() })}
+        </p>
       </div>
       {lyrics && (
         <Suspense fallback={null}>

@@ -13,35 +13,77 @@ import { setOutputScale, usePlayer } from '@/state/player';
 
 export type DjEvery = 1 | 2 | 3;
 
-interface DjState {
+/** What the listener sets: saved in this browser. */
+export interface DjSettings {
   enabled: boolean;
   /** Talk before every song, every second, or every third. */
   every: DjEvery;
+  /** The system voice's voiceURI, or null for the first one in the app's language. */
+  voice: string | null;
+  rate: number;
+  pitch: number;
+  /** The music's level while the DJ talks, 0–1. */
+  duck: number;
+  /** The listener's own lines; {title} {artist} {name} {greeting} {time} are filled in. */
+  lines: string[];
+  /** Only the listener's lines (when there are some), or theirs mixed with the built-in ones. */
+  onlyMine: boolean;
+}
+
+interface DjState extends DjSettings {
   speaking: boolean;
   setEnabled: (on: boolean) => void;
   setEvery: (every: DjEvery) => void;
+  set: (patch: Partial<DjSettings>) => void;
   /** Says something now about the song playing (the preview button). */
   speakNow: () => void;
+  /** Says [text] now, placeholders filled in. */
+  say: (text: string) => void;
 }
 
 const KEY = 'etify:dj';
-const DUCK = 0.28;
+const clamp = (v: unknown, lo: number, hi: number, fallback: number) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : fallback;
+};
 
-function load(): { enabled: boolean; every: DjEvery } {
+const DEFAULTS: DjSettings = { enabled: false, every: 1, voice: null, rate: 1.03, pitch: 1, duck: 0.28, lines: [], onlyMine: false };
+
+function load(): DjSettings {
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY) ?? 'null') as { enabled?: boolean; every?: number } | null;
-    return { enabled: raw?.enabled === true, every: raw?.every === 2 || raw?.every === 3 ? raw.every : 1 };
+    const raw = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Partial<DjSettings> | null;
+    if (!raw) return DEFAULTS;
+    return {
+      enabled: raw.enabled === true,
+      every: raw.every === 2 || raw.every === 3 ? raw.every : 1,
+      voice: typeof raw.voice === 'string' ? raw.voice : null,
+      rate: clamp(raw.rate, 0.5, 1.8, DEFAULTS.rate),
+      pitch: clamp(raw.pitch, 0, 2, DEFAULTS.pitch),
+      duck: clamp(raw.duck, 0, 1, DEFAULTS.duck),
+      lines: Array.isArray(raw.lines) ? raw.lines.filter((l) => typeof l === 'string' && l.trim()).slice(0, 50).map((l) => l.slice(0, 300)) : [],
+      onlyMine: raw.onlyMine === true,
+    };
   } catch {
-    return { enabled: false, every: 1 };
+    return DEFAULTS;
   }
 }
 
-function save(state: { enabled: boolean; every: DjEvery }) {
+function save(state: DjSettings) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(state));
+    const { enabled, every, voice, rate, pitch, duck, lines, onlyMine } = state;
+    localStorage.setItem(KEY, JSON.stringify({ enabled, every, voice, rate, pitch, duck, lines, onlyMine }));
   } catch {
     // Storage refused: the choice lasts for this tab.
   }
+}
+
+/** The system's voices, the app's language first; they load late in some browsers. */
+export function listVoices(): SpeechSynthesisVoice[] {
+  if (!djSupported()) return [];
+  const code = useLanguage.getState().lang;
+  return [...window.speechSynthesis.getVoices()].sort(
+    (a, b) => Number(!a.lang.toLowerCase().startsWith(code)) - Number(!b.lang.toLowerCase().startsWith(code)) || a.name.localeCompare(b.name),
+  );
 }
 
 export const djSupported = () => typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -75,11 +117,14 @@ interface Vars {
 
 let lastLine = -1;
 
-function speak(title: string, artist: string) {
-  if (!djSupported()) return;
+function fill(template: string, v: Vars): string {
+  return template.replace(/\{(title|artist|name|greeting|time)\}/g, (_, key: keyof Vars) => v[key]);
+}
+
+function varsFor(title: string, artist: string): Vars {
   const lang = useLanguage.getState().lang;
   const now = new Date();
-  const vars: Vars = {
+  return {
     // Brackets and "feat." read badly aloud.
     title: title.replace(/\s*[([].*?[)\]]/g, '').trim() || title,
     artist: artist.split(/,|&| x /)[0]!.trim() || artist,
@@ -87,26 +132,46 @@ function speak(title: string, artist: string) {
     name: nickname(),
     time: now.toLocaleTimeString(lang === 'id' ? 'id-ID' : 'en-US', { hour: 'numeric', minute: '2-digit' }),
   };
-  const lines = LINES[lang];
-  let pick = Math.floor(Math.random() * lines.length);
-  if (pick === lastLine) pick = (pick + 1) % lines.length;
-  lastLine = pick;
+}
 
+/** A line for this song: the listener's own and the built-in ones, as set. */
+function pickLine(vars: Vars): string {
+  const { lines: mine, onlyMine } = useDj.getState();
+  const builtIn = LINES[useLanguage.getState().lang].map((f) => f(vars));
+  const own = mine.map((l) => fill(l, vars));
+  const pool = own.length > 0 && onlyMine ? own : [...builtIn, ...own];
+  let pick = Math.floor(Math.random() * pool.length);
+  if (pick === lastLine && pool.length > 1) pick = (pick + 1) % pool.length;
+  lastLine = pick;
+  return pool[pick]!;
+}
+
+function speak(title: string, artist: string) {
+  utter(pickLine(varsFor(title, artist)));
+}
+
+/** Speaks [text] in the chosen voice, the music ducked under it. */
+function utter(text: string) {
+  if (!djSupported() || !text.trim()) return;
+  const lang = useLanguage.getState().lang;
+  const { voice, rate, pitch } = useDj.getState();
   const synth = window.speechSynthesis;
   synth.cancel();
-  const utterance = new SpeechSynthesisUtterance(lines[pick]!(vars));
+  const utterance = new SpeechSynthesisUtterance(text);
   const code = lang === 'id' ? 'id' : 'en';
-  utterance.lang = lang === 'id' ? 'id-ID' : 'en-US';
-  utterance.voice = synth.getVoices().find((v) => v.lang.toLowerCase().startsWith(code)) ?? null;
-  utterance.rate = 1.03;
-  utterance.pitch = 1;
+  const voices = synth.getVoices();
+  const chosen = (voice && voices.find((v) => v.voiceURI === voice)) || voices.find((v) => v.lang.toLowerCase().startsWith(code)) || null;
+  utterance.voice = chosen;
+  utterance.lang = chosen?.lang ?? (lang === 'id' ? 'id-ID' : 'en-US');
+  utterance.rate = rate;
+  utterance.pitch = pitch;
   const done = () => {
     useDj.setState({ speaking: false });
     setOutputScale('dj', 1);
   };
   utterance.onstart = () => {
     useDj.setState({ speaking: true });
-    setOutputScale('dj', DUCK);
+    setOutputScale('dj', useDj.getState().duck);
   };
   utterance.onend = done;
   utterance.onerror = done;
@@ -118,7 +183,7 @@ export const useDj = create<DjState>()((set, get) => ({
   speaking: false,
   setEnabled: (enabled) => {
     set({ enabled });
-    save({ enabled, every: get().every });
+    save(get());
     if (!enabled && djSupported()) {
       window.speechSynthesis.cancel();
       setOutputScale('dj', 1);
@@ -126,7 +191,15 @@ export const useDj = create<DjState>()((set, get) => ({
   },
   setEvery: (every) => {
     set({ every });
-    save({ enabled: get().enabled, every });
+    save(get());
+  },
+  set: (patch) => {
+    set(patch);
+    save(get());
+  },
+  say: (text) => {
+    const now = usePlayer.getState().nowPlaying;
+    utter(fill(text, varsFor(now?.title ?? '', now?.artist ?? '')));
   },
   speakNow: () => {
     const now = usePlayer.getState().nowPlaying;

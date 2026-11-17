@@ -7,7 +7,7 @@
  * (scripts, artwork, YouTube, audio, the extension) goes straight to the
  * network untouched. Assets are content-hashed, so nothing stale is kept.
  */
-const CACHE = 'etify-shell-v1';
+const CACHE = 'etify-shell-v2';
 const SHELL = '/index.html';
 
 self.addEventListener('install', (event) => {
@@ -32,7 +32,8 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.mode !== 'navigate' || new URL(request.url).origin !== self.location.origin) return;
   event.respondWith(
-    fetch(request)
+    // Past the browser's HTTP cache too: a deploy shows on the next load.
+    fetch(request.url, { cache: 'no-cache', credentials: 'same-origin' })
       .then((response) => {
         if (response.ok) {
           const copy = response.clone();

@@ -15,3 +15,6 @@ interface ImportMeta {
 
 /** Injected by vite.config.ts from web/extension/dev-key/extension-id.txt. */
 declare const DEV_EXTENSION_ID: string;
+/** This build's id (the commit's short hash on CI) and when it was built. */
+declare const __BUILD_ID__: string;
+declare const __BUILD_TIME__: string;

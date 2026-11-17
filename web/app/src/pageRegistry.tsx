@@ -38,6 +38,7 @@ export const pages: PageRoute[] = [
   { path: '/settings', load: () => import('@/pages/SettingsPage'), skeleton: <PlainSkeleton /> },
   { path: '/settings/discord', load: () => import('@/pages/DiscordSettingsPage'), skeleton: <PlainSkeleton /> },
   { path: '/settings/equalizer', load: () => import('@/pages/EqualizerPage'), skeleton: <PlainSkeleton /> },
+  { path: '/settings/dj', load: () => import('@/pages/DjPage'), skeleton: <PlainSkeleton /> },
   { path: '/settings/listen-together', load: () => import('@/pages/ListenTogetherPage'), skeleton: <PlainSkeleton /> },
   { path: '/invite/:code', load: () => import('@/pages/ListenTogetherPage'), skeleton: <PlainSkeleton /> },
   { path: '/extension', load: () => import('@/pages/ExtensionPage'), skeleton: <PlainSkeleton /> },
