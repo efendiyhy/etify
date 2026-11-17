@@ -444,3 +444,37 @@
     }
   }
 }
+
+/* The equaliser's mixer faders: a clear slot (drawn behind) and a ribbed cap. */
+.mixer-fader::-webkit-slider-runnable-track {
+  background: transparent;
+}
+.mixer-fader::-moz-range-track {
+  background: transparent;
+}
+.mixer-fader::-webkit-slider-thumb {
+  appearance: none;
+  width: 34px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid rgb(0 0 0 / 0.6);
+  background:
+    linear-gradient(var(--cap), var(--cap)) center / 100% 2px no-repeat,
+    repeating-linear-gradient(180deg, #4a4752 0 2px, #2a2830 2px 4px);
+  box-shadow: 0 3px 5px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.15);
+  cursor: grab;
+}
+.mixer-fader::-moz-range-thumb {
+  width: 34px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid rgb(0 0 0 / 0.6);
+  background:
+    linear-gradient(var(--cap), var(--cap)) center / 100% 2px no-repeat,
+    repeating-linear-gradient(180deg, #4a4752 0 2px, #2a2830 2px 4px);
+  box-shadow: 0 3px 5px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.15);
+  cursor: grab;
+}
+.mixer-fader:disabled::-webkit-slider-thumb {
+  cursor: default;
+}

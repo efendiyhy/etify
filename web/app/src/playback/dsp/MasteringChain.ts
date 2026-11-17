@@ -11,7 +11,7 @@ import { BAND_COUNT, type MasteringSettings } from './types';
  *   input ─┬─► preamp ─► 12-band PEQ ─► 3-band multiband compressor (LR4 crossovers)
  *          │      └─► (solo: band-pass audition)
  *          │   ─► [dry + harmonic exciter + psychoacoustic bass] ─► M/S widener with bass mono
- *          │   ─► headphone crossfeed ─► auto gain ─► brickwall limiter ─► soft clipper ─► wet
+ *          │   ─► virtual surround ─► headphone crossfeed ─► auto gain ─► brickwall limiter ─► soft clipper ─► wet
  *          └─► dry delay (the wet path's latency, so bypass is time-aligned) ─► dry
  *   wet + dry ─► output (+ post spectrum, meters)
  *
@@ -35,6 +35,28 @@ function curve(points: number, f: (x: number) => number): Float32Array<ArrayBuff
   const out = new Float32Array(points);
   for (let i = 0; i < points; i++) out[i] = f((i / (points - 1)) * 2 - 1);
   return out;
+}
+
+/**
+ * A stereo room for the surround: decaying noise, different per ear (so it
+ * sounds wide, not centred), darker as it decays. [size] 0–1 sets the length.
+ */
+function roomImpulse(ctx: BaseAudioContext, size: number): AudioBuffer {
+  const seconds = 0.35 + size * 2.2;
+  const length = Math.round(ctx.sampleRate * seconds);
+  const buffer = ctx.createBuffer(2, length, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = buffer.getChannelData(ch);
+    let low = 0;
+    for (let i = 0; i < length; i++) {
+      const t = i / length;
+      // A one-pole low-pass that closes as the tail decays: the highs die first.
+      const k = 0.65 - 0.5 * t;
+      low += k * (Math.random() * 2 - 1 - low);
+      data[i] = low * (1 - t) ** (2.2 + (1 - size) * 2.5);
+    }
+  }
+  return buffer;
 }
 
 /** Tube: tanh with a touch of x² (even harmonics, the warmth); tape: plain symmetric tanh. */
@@ -109,6 +131,12 @@ export class MasteringChain {
   private readonly sideHp: BiquadFilterNode[];
   private readonly sideWidth: GainNode;
 
+  private readonly surDelay: DelayNode;
+  private readonly surRear: GainNode;
+  private readonly surRoom: ConvolverNode;
+  private readonly surRoomGain: GainNode;
+  private readonly surDirect: GainNode;
+  private surSize = -1;
   private readonly cfDirect: GainNode[];
   private readonly cfCross: GainNode[];
 
@@ -256,8 +284,36 @@ export class MasteringChain {
     sideNeg.connect(msMerge, 0, 1);
 
     // ---- Headphone crossfeed: each ear hears a delayed, darkened bit of the other --
+    // ---- Virtual surround -----------------------------------------------------------
+    // The side (L−R) delayed and band-limited as a rear channel, fed back in
+    // anti-phase (a matrix decoder's surround), plus a decorrelated room.
+    const surOut = new GainNode(ctx, { gain: 1, channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'speakers' });
+    this.surDirect = gain(1);
+    chain(msMerge, this.surDirect, surOut);
+    const surSplit = new ChannelSplitterNode(ctx, { numberOfOutputs: 2 });
+    msMerge.connect(surSplit);
+    const surSide = gain(1);
+    const surL = gain(0.5);
+    const surRNeg = gain(-0.5);
+    surSplit.connect(surL, 0);
+    surSplit.connect(surRNeg, 1);
+    surL.connect(surSide);
+    surRNeg.connect(surSide);
+    this.surDelay = new DelayNode(ctx, { maxDelayTime: 0.05, delayTime: 0.015 });
+    this.surRear = gain(0);
+    const surRearNeg = gain(-1);
+    chain(surSide, hp(180), lp(7000), this.surDelay, this.surRear);
+    this.surRear.connect(surRearNeg);
+    const surMerge = new ChannelMergerNode(ctx, { numberOfInputs: 2 });
+    this.surRear.connect(surMerge, 0, 0);
+    surRearNeg.connect(surMerge, 0, 1);
+    surMerge.connect(surOut);
+    this.surRoom = new ConvolverNode(ctx, { disableNormalization: false });
+    this.surRoomGain = gain(0);
+    chain(msMerge, hp(150), this.surRoom, this.surRoomGain, surOut);
+
     const cfSplit = new ChannelSplitterNode(ctx, { numberOfOutputs: 2 });
-    msMerge.connect(cfSplit);
+    surOut.connect(cfSplit);
     const cfMerge = new ChannelMergerNode(ctx, { numberOfInputs: 2 });
     this.cfDirect = [gain(1), gain(1)];
     this.cfCross = [gain(0), gain(0)];
@@ -345,7 +401,7 @@ export class MasteringChain {
       });
     });
 
-    const { comp, exciter, bass, stereo, crossfeed, limiter } = settings;
+    const { comp, exciter, bass, stereo, crossfeed, limiter, surround } = settings;
     ramp(this.mbWet.gain, comp.on ? 1 : 0);
     ramp(this.mbBypass.gain, comp.on ? 0 : 1);
     for (const node of [...this.xover.low, ...this.xover.rest]) ramp(node.frequency, comp.lowCross);
@@ -374,6 +430,17 @@ export class MasteringChain {
 
     for (const node of this.sideHp) ramp(node.frequency, stereo.on ? stereo.monoBelow : 10);
     ramp(this.sideWidth.gain, stereo.on ? stereo.width : 1);
+
+    const size = Math.round(surround.size * 20) / 20;
+    if (surround.on && size !== this.surSize) {
+      // Only built when used, and again when the size changes: a new room takes a moment.
+      this.surRoom.buffer = roomImpulse(this.ctx, size);
+      this.surSize = size;
+    }
+    ramp(this.surDelay.delayTime, 0.008 + surround.size * 0.017);
+    ramp(this.surRear.gain, surround.on ? surround.depth * 0.7 : 0);
+    ramp(this.surRoomGain.gain, surround.on ? surround.amount * 0.9 : 0);
+    ramp(this.surDirect.gain, surround.on ? 1 - surround.amount * 0.25 : 1);
 
     const cross = crossfeed.on ? crossfeed.amount * 0.5 : 0;
     for (const node of this.cfCross) ramp(node.gain, cross);

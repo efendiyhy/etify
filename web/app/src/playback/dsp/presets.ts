@@ -69,6 +69,35 @@ const LEGACY: [string, string, string, number[]][] = [
 export const PRESETS: Preset[] = [
   { id: 'flat', name: { en: 'Flat', id: 'Datar' }, apply: tenBand([]) },
   {
+    id: 'cinema-surround',
+    name: { en: 'Cinema Surround', id: 'Surround Bioskop' },
+    apply: (base) => {
+      const next = withBands([
+        { type: 'lowshelf', freq: 80, gain: 4 },
+        { type: 'peaking', freq: 2500, gain: 1.5, q: 1 },
+        { type: 'highshelf', freq: 10000, gain: 2 },
+      ])(base);
+      return {
+        ...next,
+        surround: { on: true, amount: 0.45, size: 0.7, depth: 0.6 },
+        stereo: { ...base.stereo, on: true, width: 1.3, monoBelow: 120 },
+        bass: { ...base.bass, on: true, freq: 90, amount: 0.3 },
+      };
+    },
+  },
+  {
+    id: 'live-concert',
+    name: { en: 'Live Concert', id: 'Konser Live' },
+    apply: (base) => {
+      const next = withBands([
+        { type: 'lowshelf', freq: 100, gain: 3 },
+        { type: 'peaking', freq: 400, gain: -1.5, q: 1 },
+        { type: 'highshelf', freq: 8000, gain: 2.5 },
+      ])(base);
+      return { ...next, surround: { on: true, amount: 0.6, size: 0.95, depth: 0.4 } };
+    },
+  },
+  {
     id: 'audiophile-warm',
     name: { en: 'Audiophile Warm', id: 'Audiophile Hangat' },
     apply: (base) => {

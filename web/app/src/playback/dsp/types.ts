@@ -43,6 +43,8 @@ export interface MasteringSettings {
   bass: { on: boolean; freq: number; amount: number };
   stereo: { on: boolean; width: number; monoBelow: number };
   crossfeed: { on: boolean; amount: number };
+  /** Virtual surround: a matrix rear channel (the side, delayed) and a decorrelated room, both 0–1. */
+  surround: { on: boolean; amount: number; size: number; depth: number };
   limiter: { on: boolean; ceiling: number };
   /** Matches the processed loudness to the input's, so louder doesn't pass for better. */
   autoGain: boolean;
@@ -97,6 +99,7 @@ export function defaultSettings(): MasteringSettings {
     bass: { on: false, freq: 110, amount: 0.35 },
     stereo: { on: false, width: 1.2, monoBelow: 120 },
     crossfeed: { on: false, amount: 0.3 },
+    surround: { on: false, amount: 0.3, size: 0.5, depth: 0.5 },
     limiter: { on: true, ceiling: -0.3 },
     autoGain: false,
   };
@@ -161,6 +164,12 @@ export function sanitizeSettings(raw: Partial<MasteringSettings> | null | undefi
       monoBelow: num(raw.stereo?.monoBelow, base.stereo.monoBelow, 20, 300),
     },
     crossfeed: { on: raw.crossfeed?.on === true, amount: num(raw.crossfeed?.amount, base.crossfeed.amount, 0, 1) },
+    surround: {
+      on: raw.surround?.on === true,
+      amount: num(raw.surround?.amount, base.surround.amount, 0, 1),
+      size: num(raw.surround?.size, base.surround.size, 0, 1),
+      depth: num(raw.surround?.depth, base.surround.depth, 0, 1),
+    },
     limiter: { on: raw.limiter?.on !== false, ceiling: num(raw.limiter?.ceiling, base.limiter.ceiling, -6, 0) },
     autoGain: raw.autoGain === true,
   };
