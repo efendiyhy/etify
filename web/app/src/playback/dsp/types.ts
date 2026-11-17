@@ -45,7 +45,11 @@ export interface MasteringSettings {
   crossfeed: { on: boolean; amount: number };
   /** Virtual surround: a matrix rear channel (the side, delayed) and a decorrelated room, both 0–1. */
   surround: { on: boolean; amount: number; size: number; depth: number };
+  /** 8D audio: the sound circles the listener (HRTF); [speed] is seconds per turn, [depth] 0–1 the mix. */
+  eightD: { on: boolean; speed: number; depth: number };
   limiter: { on: boolean; ceiling: number };
+  /** Left/right balance, −1 (left) to +1 (right). */
+  balance: number;
   /** Matches the processed loudness to the input's, so louder doesn't pass for better. */
   autoGain: boolean;
 }
@@ -100,8 +104,10 @@ export function defaultSettings(): MasteringSettings {
     stereo: { on: false, width: 1.2, monoBelow: 120 },
     crossfeed: { on: false, amount: 0.3 },
     surround: { on: false, amount: 0.3, size: 0.5, depth: 0.5 },
+    eightD: { on: false, speed: 8, depth: 0.85 },
     limiter: { on: true, ceiling: -0.3 },
     autoGain: false,
+    balance: 0,
   };
 }
 
@@ -170,7 +176,13 @@ export function sanitizeSettings(raw: Partial<MasteringSettings> | null | undefi
       size: num(raw.surround?.size, base.surround.size, 0, 1),
       depth: num(raw.surround?.depth, base.surround.depth, 0, 1),
     },
+    eightD: {
+      on: raw.eightD?.on === true,
+      speed: num(raw.eightD?.speed, base.eightD.speed, 2, 30),
+      depth: num(raw.eightD?.depth, base.eightD.depth, 0, 1),
+    },
     limiter: { on: raw.limiter?.on !== false, ceiling: num(raw.limiter?.ceiling, base.limiter.ceiling, -6, 0) },
     autoGain: raw.autoGain === true,
+    balance: num(raw.balance, 0, -1, 1),
   };
 }

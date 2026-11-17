@@ -35,6 +35,8 @@ const hz = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 1 : 2)
 const hzUnit = (v: number) => `${hz(v)}${v >= 1000 ? 'Hz' : ' Hz'}`;
 const db = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)} dB`;
 const pct = (v: number) => `${Math.round(v * 100)}%`;
+/** L 40 · C · R 25: how far the balance leans, in percent. */
+const balanceLabel = (v: number) => (Math.abs(v) < 0.005 ? 'C' : `${v < 0 ? 'L' : 'R'} ${Math.round(Math.abs(v) * 100)}`);
 /** Frequency knobs turn along a log scale: 0–1000 maps to 20 Hz–20 kHz. */
 const toPos = (f: number) => Math.round((Math.log10(f / MIN_HZ) / Math.log10(MAX_HZ / MIN_HZ)) * 1000);
 const fromPos = (p: number) => Math.round(MIN_HZ * (MAX_HZ / MIN_HZ) ** (p / 1000));
@@ -123,16 +125,16 @@ function BandEditor({ index, band, solo }: { index: number; band: EqBand; solo: 
   );
 }
 
-/** A mixer's vertical fader with a cap, its scale, and its value on top. */
+/** A mixer's vertical fader with a cap and its scale; it fills its strip's width. */
 function Fader({ label, value, min, max, onChange, color, disabled }: { label: string; value: number; min: number; max: number; onChange: (v: number) => void; color?: string; disabled?: boolean }) {
   return (
-    <div className={`flex flex-col items-center gap-1 ${disabled ? 'opacity-40' : ''}`}>
-      <span className="type-[600_11px/14px] tabular-nums text-primary">{`${value > 0 ? '+' : ''}${value.toFixed(1)}`}</span>
-      <div className="relative h-44 w-9">
+    <div className={`flex w-full flex-col items-center gap-1 ${disabled ? 'opacity-40' : ''}`}>
+      <span className="type-[600_10px/12px] tabular-nums text-primary">{`${value > 0 ? '+' : ''}${value.toFixed(1)}`}</span>
+      <div className="relative h-36 w-full max-w-9">
         {/* The slot and its scale. */}
-        <span className="absolute inset-y-1 left-1/2 w-1.5 -translate-x-1/2 rounded-full bg-black/50 shadow-[inset_0_1px_2px_rgb(0_0_0/0.6)]" />
+        <span className="absolute inset-y-1 left-1/2 w-1 -translate-x-1/2 rounded-full bg-black/50 shadow-[inset_0_1px_2px_rgb(0_0_0/0.6)]" />
         {[0, 0.25, 0.5, 0.75, 1].map((p) => (
-          <span key={p} className="absolute left-0 h-px w-1.5 bg-tertiary" style={{ top: `calc(${p} * (100% - 8px) + 4px)` }} />
+          <span key={p} className="absolute left-0 h-px w-1 bg-tertiary" style={{ top: `calc(${p} * (100% - 8px) + 4px)` }} />
         ))}
         <input
           type="range"
@@ -152,49 +154,80 @@ function Fader({ label, value, min, max, onChange, color, disabled }: { label: s
   );
 }
 
-/** The mixer view: a channel strip per band (on, Q, fader), and the master (preamp). */
+/** A small lit power button: only the LED, for the mixer's narrow strips. */
+function LedDot({ on, onToggle, label, tone = '#3ddc84' }: { on: boolean; onToggle: (on: boolean) => void; label: string; tone?: string }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      aria-label={label}
+      title={label}
+      onClick={() => onToggle(!on)}
+      className="grid h-5 w-full max-w-8 place-items-center rounded-[5px] border border-black/40 bg-[linear-gradient(180deg,#3a3842,#24222b)] shadow-[inset_0_1px_0_rgb(255_255_255/0.12),0_1px_2px_rgb(0_0_0/0.35)] active:translate-y-px"
+    >
+      <span
+        className="size-2 rounded-full"
+        style={on ? { background: tone, boxShadow: `0 0 6px 1px ${tone}` } : { background: '#14131a', boxShadow: 'inset 0 1px 1px rgb(0 0 0 / 0.8)' }}
+      />
+    </button>
+  );
+}
+
+/**
+ * The mixer view: a channel strip per band (on, Q, fader) and the master
+ * (balance, preamp), thirteen equal columns that always fit the panel.
+ */
 function MixerView({ settings, preamp }: { settings: MasteringSettings; preamp: number }) {
   const t = useT();
   const { setBand, update } = useMastering.getState();
+  const strip = 'flex min-w-0 flex-col items-center gap-1.5 rounded-[8px] border border-quaternary bg-quinary px-0.5 py-2';
   return (
-    <div className="overflow-x-auto px-3 py-4 [scrollbar-width:thin]">
-      <div className="flex min-w-max gap-1.5">
-        {settings.bands.map((band, i) => (
-          <div key={i} className="flex w-[74px] flex-none flex-col items-center gap-2 rounded-[10px] border border-quaternary bg-quinary px-1 py-2">
-            <span className="grid size-5 place-items-center rounded-full type-[700_10px/1] text-black" style={{ background: BAND_COLORS[i] }}>
-              {i + 1}
-            </span>
-            <LedButton on={band.on} onToggle={(on) => setBand(i, { on })} label={t('eq.band', { n: i + 1 })} className="h-6 px-2" />
-            <Knob size={30} color={BAND_COLORS[i]} label={t('eq.q')} value={band.q} min={MIN_Q} max={MAX_Q} step={0.01} reset={1.41} disabled={!hasQ(band)} onChange={(q) => setBand(i, { q })} />
-            <Fader
-              label={hz(band.freq)}
-              value={hasGain(band.type) ? band.gain : 0}
-              min={-MAX_GAIN}
-              max={MAX_GAIN}
-              onChange={(v) => setBand(i, { gain: v })}
-              color={BAND_COLORS[i]}
-              disabled={!band.on || !hasGain(band.type)}
-            />
-            <span className="type-[700_11px/14px] text-secondary">{hz(band.freq)}</span>
-          </div>
-        ))}
-        {/* Master: the preamp, with Auto. */}
-        <div className="ms-2 flex w-[84px] flex-none flex-col items-center gap-2 rounded-[10px] border border-key/40 bg-key/10 px-1 py-2">
-          <span className="type-[700_11px/14px] tracking-wide text-key uppercase">{t('eq.master')}</span>
-          <LedButton on={settings.autoPreamp} onToggle={(on) => update((s) => ({ ...s, autoPreamp: on }))} label={t('eq.autoPreampDetail')} tone="key" className="h-6 px-2">
-            {t('eq.auto')}
-          </LedButton>
-          <span className="h-[72px]" />
+    <div className="grid grid-cols-[repeat(12,minmax(0,1fr))_minmax(0,1.25fr)] gap-1 p-2 sm:gap-1.5 sm:p-3">
+      {settings.bands.map((band, i) => (
+        <div key={i} className={strip}>
+          <span className="grid size-[18px] place-items-center rounded-full type-[700_10px/1] text-black" style={{ background: BAND_COLORS[i] }}>
+            {i + 1}
+          </span>
+          <LedDot on={band.on} onToggle={(on) => setBand(i, { on })} label={t('eq.band', { n: i + 1 })} />
+          <Knob compact size={30} color={BAND_COLORS[i]} label={t('eq.q')} value={band.q} min={MIN_Q} max={MAX_Q} step={0.01} reset={1.41} disabled={!hasQ(band)} onChange={(q) => setBand(i, { q })} />
           <Fader
-            label={t('eq.preamp')}
-            value={preamp}
-            min={PREAMP_MIN}
-            max={PREAMP_MAX}
-            onChange={(v) => update((s) => ({ ...s, preampDb: v, autoPreamp: false }))}
-            disabled={settings.autoPreamp}
+            label={hz(band.freq)}
+            value={hasGain(band.type) ? band.gain : 0}
+            min={-MAX_GAIN}
+            max={MAX_GAIN}
+            onChange={(v) => setBand(i, { gain: v })}
+            color={BAND_COLORS[i]}
+            disabled={!band.on || !hasGain(band.type)}
           />
-          <span className="type-[700_11px/14px] text-secondary">{t('eq.preamp')}</span>
+          <span className="max-w-full truncate type-[700_10px/12px] text-secondary">{hz(band.freq)}</span>
         </div>
+      ))}
+      {/* Master: balance and the preamp, with Auto. */}
+      <div className={`${strip} border-key/40 bg-key/10`}>
+        <span className="max-w-full truncate type-[700_10px/18px] tracking-wide text-key uppercase">{t('eq.master')}</span>
+        <LedDot on={settings.autoPreamp} onToggle={(on) => update((s) => ({ ...s, autoPreamp: on }))} label={`${t('eq.auto')}: ${t('eq.autoPreampDetail')}`} tone="var(--keyColor)" />
+        <Knob
+          compact
+          size={30}
+          label={t('mod.balance')}
+          value={settings.balance}
+          min={-1}
+          max={1}
+          step={0.01}
+          format={balanceLabel}
+          reset={0}
+          bipolar
+          onChange={(v) => update((s) => ({ ...s, balance: v }))}
+        />
+        <Fader
+          label={t('eq.preamp')}
+          value={preamp}
+          min={PREAMP_MIN}
+          max={PREAMP_MAX}
+          onChange={(v) => update((s) => ({ ...s, preampDb: v, autoPreamp: false }))}
+          disabled={settings.autoPreamp}
+        />
+        <span className="max-w-full truncate type-[700_10px/12px] text-secondary">{t('eq.preamp')}</span>
       </div>
     </div>
   );
@@ -214,7 +247,7 @@ export default function EqualizerPage() {
 
   const preamp = MasteringChain.effectivePreamp(settings);
   const update = (change: (s: MasteringSettings) => MasteringSettings) => store.update(change);
-  const mod = <K extends 'exciter' | 'bass' | 'stereo' | 'crossfeed' | 'surround' | 'limiter'>(key: K, patch: Partial<MasteringSettings[K]>) =>
+  const mod = <K extends 'exciter' | 'bass' | 'stereo' | 'crossfeed' | 'surround' | 'eightD' | 'limiter'>(key: K, patch: Partial<MasteringSettings[K]>) =>
     update((s) => ({ ...s, [key]: { ...s[key], ...patch } }));
   const comp = (i: number, patch: Partial<CompressorBand>) =>
     update((s) => ({ ...s, comp: { ...s.comp, bands: s.comp.bands.map((b, j) => (j === i ? { ...b, ...patch } : b)) as MasteringSettings['comp']['bands'] } }));
@@ -242,7 +275,7 @@ export default function EqualizerPage() {
 
   const band = settings.bands[selected]!;
   const compLabels = [t('mod.low'), t('mod.mid'), t('mod.high')];
-  const { exciter, bass, stereo, crossfeed, surround, limiter } = settings;
+  const { exciter, bass, stereo, crossfeed, surround, eightD, limiter } = settings;
 
   return (
     // Any press on the page wakes a suspended audio context (autoplay policy).
@@ -404,6 +437,18 @@ export default function EqualizerPage() {
                   disabled={settings.autoPreamp}
                   onChange={(v) => update((s) => ({ ...s, preampDb: v }))}
                 />
+                <Knob
+                  size={54}
+                  label={t('mod.balance')}
+                  value={settings.balance}
+                  min={-1}
+                  max={1}
+                  step={0.01}
+                  format={balanceLabel}
+                  reset={0}
+                  bipolar
+                  onChange={(v) => update((s) => ({ ...s, balance: v }))}
+                />
                 <div className="flex max-w-[260px] flex-col items-start gap-1.5">
                   <LedButton on={settings.autoPreamp} onToggle={(on) => update((s) => ({ ...s, autoPreamp: on }))} label={t('eq.autoPreampDetail')} tone="key">
                     {t('eq.auto')}
@@ -421,11 +466,26 @@ export default function EqualizerPage() {
         <Meters labels={[compLabels[0]!, compLabels[1]!, compLabels[2]!, t('mod.limiter')]} />
 
         <h2 className={settingsUi.sectionHeader}>{t('eq.mastering')}</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Strip title={t('mod.surround')} detail={t('mod.surroundDetail')} on={surround.on} onToggle={(on) => mod('surround', { on })}>
             <Knob label={t('mod.room')} value={surround.amount} min={0} max={1} step={0.01} format={pct} onChange={(v) => mod('surround', { amount: v })} />
             <Knob label={t('mod.size')} value={surround.size} min={0} max={1} step={0.01} format={pct} onChange={(v) => mod('surround', { size: v })} />
             <Knob label={t('mod.depth')} value={surround.depth} min={0} max={1} step={0.01} format={pct} onChange={(v) => mod('surround', { depth: v })} />
+          </Strip>
+
+          <Strip title={t('mod.eightD')} detail={t('mod.eightDDetail')} on={eightD.on} onToggle={(on) => mod('eightD', { on })}>
+            {/* Turns per minute on the knob; stored as seconds per turn. */}
+            <Knob
+              label={t('mod.speed')}
+              value={Math.round(600 / eightD.speed) / 10}
+              min={2}
+              max={30}
+              step={0.5}
+              unit=" rpm"
+              reset={7.5}
+              onChange={(rpm) => mod('eightD', { speed: 60 / rpm })}
+            />
+            <Knob label={t('mod.mix')} value={eightD.depth} min={0} max={1} step={0.01} format={pct} onChange={(v) => mod('eightD', { depth: v })} />
           </Strip>
 
           <Strip title={t('mod.stereo')} detail={t('mod.stereoDetail')} on={stereo.on} onToggle={(on) => mod('stereo', { on })}>
@@ -438,14 +498,17 @@ export default function EqualizerPage() {
             <Knob label={t('mod.amount')} value={bass.amount} min={0} max={1} step={0.01} format={pct} onChange={(v) => mod('bass', { amount: v })} />
           </Strip>
 
-          <Strip title={t('mod.exciter')} detail={t('mod.exciterDetail')} on={exciter.on} onToggle={(on) => mod('exciter', { on })}>
-            <div className="flex w-full justify-center gap-1.5 pb-1">
-              {(['tube', 'tape'] as const).map((m) => (
-                <LedButton key={m} on={exciter.mode === m} onToggle={() => mod('exciter', { mode: m })} label={t(m === 'tube' ? 'mod.tube' : 'mod.tape')} tone="amber">
-                  {t(m === 'tube' ? 'mod.tube' : 'mod.tape')}
-                </LedButton>
-              ))}
-            </div>
+          <Strip
+            title={t('mod.exciter')}
+            detail={t('mod.exciterDetail')}
+            on={exciter.on}
+            onToggle={(on) => mod('exciter', { on })}
+            buttons={(['tube', 'tape'] as const).map((m) => (
+              <LedButton key={m} on={exciter.mode === m} onToggle={() => mod('exciter', { mode: m })} label={t(m === 'tube' ? 'mod.tube' : 'mod.tape')} tone="amber">
+                {t(m === 'tube' ? 'mod.tube' : 'mod.tape')}
+              </LedButton>
+            ))}
+          >
             <Knob label={t('mod.drive')} value={exciter.drive} min={1} max={10} step={0.1} unit="×" onChange={(v) => mod('exciter', { drive: v })} />
             <Knob label={t('mod.from')} value={exciter.freq} min={800} max={12000} step={50} format={hzUnit} onChange={(v) => mod('exciter', { freq: v })} />
             <Knob label={t('mod.mix')} value={exciter.mix} min={0} max={1} step={0.01} format={pct} onChange={(v) => mod('exciter', { mix: v })} />
@@ -455,32 +518,40 @@ export default function EqualizerPage() {
             <Knob label={t('mod.amount')} value={crossfeed.amount} min={0} max={1} step={0.01} format={pct} onChange={(v) => mod('crossfeed', { amount: v })} />
           </Strip>
 
-          <Strip title={t('mod.limiter')} detail={t('mod.limiterDetail')} on={limiter.on} onToggle={(on) => mod('limiter', { on })}>
-            <Knob label={t('mod.ceiling')} value={limiter.ceiling} min={-6} max={0} step={0.1} unit=" dB" reset={-0.3} onChange={(v) => mod('limiter', { ceiling: v })} />
-            <div className="flex flex-col items-center justify-center gap-1.5 px-2">
+          <Strip title={t('mod.balance')} detail={t('mod.balanceDetail')}>
+            <Knob label={t('mod.balance')} value={settings.balance} min={-1} max={1} step={0.01} format={balanceLabel} reset={0} bipolar onChange={(v) => update((s) => ({ ...s, balance: v }))} />
+          </Strip>
+
+          <Strip
+            title={t('mod.limiter')}
+            detail={t('mod.limiterDetail')}
+            on={limiter.on}
+            onToggle={(on) => mod('limiter', { on })}
+            buttons={
               <LedButton on={settings.autoGain} onToggle={(on) => update((s) => ({ ...s, autoGain: on }))} label={t('mod.autoGainDetail')} tone="key">
                 {t('mod.autoGain')}
               </LedButton>
-            </div>
+            }
+          >
+            <Knob label={t('mod.ceiling')} value={limiter.ceiling} min={-6} max={0} step={0.1} unit=" dB" reset={-0.3} onChange={(v) => mod('limiter', { ceiling: v })} />
           </Strip>
 
           <Strip wide title={t('mod.comp')} detail={t('mod.compDetail')} on={settings.comp.on} onToggle={(on) => update((s) => ({ ...s, comp: { ...s.comp, on } }))}>
-            <div className="flex w-full flex-wrap items-start justify-center gap-3">
-              <div className="flex flex-col items-center gap-2 rounded-[10px] bg-quaternary/50 px-2 py-2">
-                <span className="type-[700_11px/14px] tracking-wide text-secondary uppercase">X-over</span>
-                <Knob label={t('mod.lowCross')} value={settings.comp.lowCross} min={60} max={600} step={5} unit=" Hz" onChange={(v) => update((s) => ({ ...s, comp: { ...s.comp, lowCross: v } }))} />
-                <Knob label={t('mod.highCross')} value={settings.comp.highCross} min={1500} max={10000} step={50} format={hzUnit} onChange={(v) => update((s) => ({ ...s, comp: { ...s.comp, highCross: v } }))} />
+            {/* A console's rows: the crossovers, then a row of five knobs per band, each column one control. */}
+            <div className="mx-auto flex w-fit max-w-full flex-col gap-2 overflow-x-auto">
+              <div className="flex items-center gap-2 rounded-[10px] bg-quaternary/50 px-2 py-2">
+                <span className="w-14 flex-none type-[700_11px/14px] tracking-wide text-secondary uppercase">X-over</span>
+                <Knob size={40} label={t('mod.lowCross')} value={settings.comp.lowCross} min={60} max={600} step={5} unit=" Hz" onChange={(v) => update((s) => ({ ...s, comp: { ...s.comp, lowCross: v } }))} />
+                <Knob size={40} label={t('mod.highCross')} value={settings.comp.highCross} min={1500} max={10000} step={50} format={hzUnit} onChange={(v) => update((s) => ({ ...s, comp: { ...s.comp, highCross: v } }))} />
               </div>
               {settings.comp.bands.map((b, i) => (
-                <div key={i} className="flex flex-col items-center gap-2 rounded-[10px] bg-quaternary/50 px-2 py-2">
-                  <span className="type-[700_11px/14px] tracking-wide text-secondary uppercase">{compLabels[i]}</span>
-                  <div className="grid grid-cols-3 gap-y-2">
-                    <Knob size={40} label={t('mod.threshold')} value={b.threshold} min={-60} max={0} step={0.5} unit=" dB" onChange={(v) => comp(i, { threshold: v })} />
-                    <Knob size={40} label={t('mod.ratio')} value={b.ratio} min={1} max={20} step={0.1} format={(v) => `${v.toFixed(1)}:1`} onChange={(v) => comp(i, { ratio: v })} />
-                    <Knob size={40} label={t('mod.makeup')} value={b.makeup} min={-12} max={12} step={0.5} unit=" dB" reset={0} bipolar onChange={(v) => comp(i, { makeup: v })} />
-                    <Knob size={40} label={t('mod.attack')} value={b.attack * 1000} min={1} max={500} step={0.5} unit=" ms" onChange={(v) => comp(i, { attack: v / 1000 })} />
-                    <Knob size={40} label={t('mod.release')} value={b.release * 1000} min={10} max={1000} step={5} unit=" ms" onChange={(v) => comp(i, { release: v / 1000 })} />
-                  </div>
+                <div key={i} className="flex items-center gap-2 rounded-[10px] bg-quaternary/50 px-2 py-2">
+                  <span className="w-14 flex-none type-[700_11px/14px] tracking-wide text-secondary uppercase">{compLabels[i]}</span>
+                  <Knob size={40} label={t('mod.threshold')} value={b.threshold} min={-60} max={0} step={0.5} unit=" dB" onChange={(v) => comp(i, { threshold: v })} />
+                  <Knob size={40} label={t('mod.ratio')} value={b.ratio} min={1} max={20} step={0.1} format={(v) => `${v.toFixed(1)}:1`} onChange={(v) => comp(i, { ratio: v })} />
+                  <Knob size={40} label={t('mod.attack')} value={b.attack * 1000} min={1} max={500} step={0.5} unit=" ms" onChange={(v) => comp(i, { attack: v / 1000 })} />
+                  <Knob size={40} label={t('mod.release')} value={b.release * 1000} min={10} max={1000} step={5} unit=" ms" onChange={(v) => comp(i, { release: v / 1000 })} />
+                  <Knob size={40} label={t('mod.makeup')} value={b.makeup} min={-12} max={12} step={0.5} unit=" dB" reset={0} bipolar onChange={(v) => comp(i, { makeup: v })} />
                 </div>
               ))}
             </div>

@@ -86,6 +86,21 @@ export const PRESETS: Preset[] = [
     },
   },
   {
+    id: '8d-audio',
+    name: { en: '8D Audio', id: 'Audio 8D' },
+    apply: (base) => {
+      const next = withBands([
+        { type: 'lowshelf', freq: 90, gain: 3 },
+        { type: 'highshelf', freq: 9000, gain: 1.5 },
+      ])(base);
+      return {
+        ...next,
+        eightD: { on: true, speed: 8, depth: 0.9 },
+        surround: { on: true, amount: 0.35, size: 0.6, depth: 0.2 },
+      };
+    },
+  },
+  {
     id: 'live-concert',
     name: { en: 'Live Concert', id: 'Konser Live' },
     apply: (base) => {
@@ -177,7 +192,7 @@ export const PRESETS: Preset[] = [
 export function applyPreset(current: MasteringSettings, id: string): MasteringSettings | null {
   const preset = PRESETS.find((p) => p.id === id);
   if (!preset) return null;
-  const base = { ...defaultSettings(), enabled: true, autoPreamp: current.autoPreamp, autoGain: current.autoGain };
+  const base = { ...defaultSettings(), enabled: true, autoPreamp: current.autoPreamp, autoGain: current.autoGain, balance: current.balance };
   return { ...preset.apply(base), preset: id, enabled: true };
 }
 

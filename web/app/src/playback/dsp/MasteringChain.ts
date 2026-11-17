@@ -11,7 +11,7 @@ import { BAND_COUNT, type MasteringSettings } from './types';
  *   input ─┬─► preamp ─► 12-band PEQ ─► 3-band multiband compressor (LR4 crossovers)
  *          │      └─► (solo: band-pass audition)
  *          │   ─► [dry + harmonic exciter + psychoacoustic bass] ─► M/S widener with bass mono
- *          │   ─► virtual surround ─► headphone crossfeed ─► auto gain ─► brickwall limiter ─► soft clipper ─► wet
+ *          │   ─► virtual surround ─► 8D rotation ─► headphone crossfeed ─► balance ─► auto gain ─► brickwall limiter ─► soft clipper ─► wet
  *          └─► dry delay (the wet path's latency, so bypass is time-aligned) ─► dry
  *   wet + dry ─► output (+ post spectrum, meters)
  *
@@ -137,6 +137,10 @@ export class MasteringChain {
   private readonly surRoomGain: GainNode;
   private readonly surDirect: GainNode;
   private surSize = -1;
+  private readonly rotDirect: GainNode;
+  private readonly rotWet: GainNode;
+  private readonly rotOsc: OscillatorNode[];
+  private readonly balance: [GainNode, GainNode];
   private readonly cfDirect: GainNode[];
   private readonly cfCross: GainNode[];
 
@@ -312,8 +316,36 @@ export class MasteringChain {
     this.surRoomGain = gain(0);
     chain(msMerge, hp(150), this.surRoom, this.surRoomGain, surOut);
 
+    // ---- 8D audio: the sound on a circle round the head ------------------------------
+    // An HRTF panner whose position is driven by two oscillators a quarter-turn
+    // apart (sine on x, cosine on z): audio-rate, so it moves without a timer.
+    const rotOut = new GainNode(ctx, { gain: 1, channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'speakers' });
+    this.rotDirect = gain(1);
+    this.rotWet = gain(0);
+    chain(surOut, this.rotDirect, rotOut);
+    const panner = new PannerNode(ctx, {
+      panningModel: 'HRTF',
+      distanceModel: 'inverse',
+      refDistance: 1,
+      rolloffFactor: 0,
+      positionX: 0,
+      positionY: 0.15,
+      positionZ: 0,
+    });
+    const sine = new OscillatorNode(ctx, { type: 'sine', frequency: 1 / 8 });
+    const cosine = new OscillatorNode(ctx, {
+      frequency: 1 / 8,
+      periodicWave: new PeriodicWave(ctx, { real: [0, 1], imag: [0, 0], disableNormalization: true }),
+    });
+    sine.connect(panner.positionX);
+    cosine.connect(panner.positionZ);
+    sine.start();
+    cosine.start();
+    this.rotOsc = [sine, cosine];
+    chain(surOut, panner, this.rotWet, rotOut);
+
     const cfSplit = new ChannelSplitterNode(ctx, { numberOfOutputs: 2 });
-    surOut.connect(cfSplit);
+    rotOut.connect(cfSplit);
     const cfMerge = new ChannelMergerNode(ctx, { numberOfInputs: 2 });
     this.cfDirect = [gain(1), gain(1)];
     this.cfCross = [gain(0), gain(0)];
@@ -331,7 +363,16 @@ export class MasteringChain {
     this.limiter = new DynamicsCompressorNode(ctx, { threshold: -0.3, knee: 0, ratio: 20, attack: 0.001, release: 0.1 });
     const clipIn = gain(0.5);
     this.clipper = new WaveShaperNode(ctx, { oversample: '4x' });
-    chain(cfMerge, this.autoGain, this.limiter, clipIn, this.clipper, this.wetGain, this.output);
+    // Balance: each side's level on its own (no mixing across, unlike a panner).
+    const balSplit = new ChannelSplitterNode(ctx, { numberOfOutputs: 2 });
+    const balMerge = new ChannelMergerNode(ctx, { numberOfInputs: 2 });
+    this.balance = [gain(1), gain(1)];
+    cfMerge.connect(balSplit);
+    for (const ch of [0, 1]) {
+      balSplit.connect(this.balance[ch]!, ch);
+      this.balance[ch]!.connect(balMerge, 0, ch);
+    }
+    chain(balMerge, this.autoGain, this.limiter, clipIn, this.clipper, this.wetGain, this.output);
     this.agMeter = new AnalyserNode(ctx, { fftSize: 8192, smoothingTimeConstant: 0 });
     this.autoGain.connect(this.agMeter);
 
@@ -368,6 +409,7 @@ export class MasteringChain {
 
   dispose(): void {
     clearInterval(this.timer);
+    for (const osc of this.rotOsc) osc.stop();
     this.input.disconnect();
     this.output.disconnect();
   }
@@ -401,7 +443,7 @@ export class MasteringChain {
       });
     });
 
-    const { comp, exciter, bass, stereo, crossfeed, limiter, surround } = settings;
+    const { comp, exciter, bass, stereo, crossfeed, limiter, surround, eightD } = settings;
     ramp(this.mbWet.gain, comp.on ? 1 : 0);
     ramp(this.mbBypass.gain, comp.on ? 0 : 1);
     for (const node of [...this.xover.low, ...this.xover.rest]) ramp(node.frequency, comp.lowCross);
@@ -442,6 +484,11 @@ export class MasteringChain {
     ramp(this.surRoomGain.gain, surround.on ? surround.amount * 0.9 : 0);
     ramp(this.surDirect.gain, surround.on ? 1 - surround.amount * 0.25 : 1);
 
+    for (const osc of this.rotOsc) ramp(osc.frequency, 1 / eightD.speed);
+    // HRTF is a touch quieter than the direct sound: a little lift keeps the level.
+    ramp(this.rotWet.gain, eightD.on ? eightD.depth * 1.25 : 0);
+    ramp(this.rotDirect.gain, eightD.on ? 1 - eightD.depth : 1);
+
     const cross = crossfeed.on ? crossfeed.amount * 0.5 : 0;
     for (const node of this.cfCross) ramp(node.gain, cross);
     for (const node of this.cfDirect) ramp(node.gain, 1 - cross * 0.5);
@@ -454,6 +501,9 @@ export class MasteringChain {
       this.clipper.curve = clipperCurve((limiter.on ? limiter.ceiling : 0) - 0.2);
       this.clipperKey = clipKey;
     }
+
+    ramp(this.balance[0].gain, settings.balance > 0 ? 1 - settings.balance : 1);
+    ramp(this.balance[1].gain, settings.balance < 0 ? 1 + settings.balance : 1);
 
     this.autoGainOn = settings.autoGain;
     if (!settings.autoGain) this.setAutoGain(0);

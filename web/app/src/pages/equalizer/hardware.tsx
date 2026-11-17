@@ -8,6 +8,12 @@ import { useEffect, useId, useRef, type ReactNode } from 'react';
 const START = -135;
 const SWEEP = 270;
 
+/** The pointer's angle around [el]'s centre, degrees clockwise from straight up. */
+function pointerAngle(el: Element, x: number, y: number): number {
+  const r = el.getBoundingClientRect();
+  return (Math.atan2(x - (r.left + r.width / 2), r.top + r.height / 2 - y) * 180) / Math.PI;
+}
+
 function polar(cx: number, cy: number, r: number, deg: number) {
   const a = ((deg - 90) * Math.PI) / 180;
   return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
@@ -38,16 +44,19 @@ export interface KnobProps {
   size?: number;
   /** The arc's colour; the key colour by default. */
   color?: string;
+  /** Fills its column and shows only the value (the mixer's narrow strips). */
+  compact?: boolean;
   onChange: (value: number) => void;
 }
 
 /**
- * A potentiometer: drag up/down (Shift for fine steps), scroll, or use the
+ * A potentiometer: turn it with the cursor, round its centre, clockwise to
+ * raise (Shift for fine steps); or scroll, or use the
  * arrow keys; double-click resets.
  */
-export function Knob({ label, value, min, max, step = 0.1, unit = '', format, reset, bipolar, disabled, size = 46, color, onChange }: KnobProps) {
+export function Knob({ label, value, min, max, step = 0.1, unit = '', format, reset, bipolar, disabled, size = 46, color, compact, onChange }: KnobProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ y: number; value: number } | null>(null);
+  const drag = useRef<{ angle: number; value: number } | null>(null);
   const live = useRef({ value, min, max, step, onChange, disabled });
   live.current = { value, min, max, step, onChange, disabled };
   const id = useId();
@@ -88,7 +97,7 @@ export function Knob({ label, value, min, max, step = 0.1, unit = '', format, re
   const base = polar(c, c, 6, angle);
 
   return (
-    <div className={`flex w-[72px] flex-none flex-col items-center gap-1 select-none ${disabled ? 'opacity-40' : ''}`}>
+    <div className={`flex flex-none flex-col items-center gap-0.5 select-none ${compact ? 'w-full' : 'w-16'} ${disabled ? 'opacity-40' : ''}`}>
       <div
         ref={ref}
         role="slider"
@@ -100,17 +109,24 @@ export function Knob({ label, value, min, max, step = 0.1, unit = '', format, re
         aria-valuetext={shown}
         aria-disabled={disabled}
         aria-describedby={id}
-        className="cursor-ns-resize touch-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-key"
-        style={{ width: size + 18, height: size + 18 }}
+        className="cursor-grab touch-none active:cursor-grabbing rounded-full outline-none focus-visible:ring-2 focus-visible:ring-key"
+        style={compact ? { width: '100%', maxWidth: size + 18, aspectRatio: '1' } : { width: size + 18, height: size + 18 }}
         onPointerDown={(e) => {
           if (disabled) return;
-          drag.current = { y: e.clientY, value };
+          drag.current = { angle: pointerAngle(e.currentTarget, e.clientX, e.clientY), value };
           e.currentTarget.setPointerCapture(e.pointerId);
         }}
         onPointerMove={(e) => {
           if (!drag.current) return;
-          const dy = drag.current.y - e.clientY;
-          set(drag.current.value + (dy / (e.shiftKey ? 1000 : 220)) * span);
+          const angle = pointerAngle(e.currentTarget, e.clientX, e.clientY);
+          // The turn since the last move, the short way round (so crossing the bottom doesn't jump).
+          let turn = angle - drag.current.angle;
+          if (turn > 180) turn -= 360;
+          if (turn < -180) turn += 360;
+          drag.current.angle = angle;
+          const { min: lo, max: hi } = live.current;
+          drag.current.value = Math.min(hi, Math.max(lo, drag.current.value + (turn / SWEEP) * span * (e.shiftKey ? 0.2 : 1)));
+          set(drag.current.value);
         }}
         onPointerUp={() => (drag.current = null)}
         onPointerCancel={() => (drag.current = null)}
@@ -161,7 +177,12 @@ export function Knob({ label, value, min, max, step = 0.1, unit = '', format, re
       <span id={id} className="type-[600_11px/14px] tabular-nums text-primary">
         {shown}
       </span>
-      <span className="max-w-full truncate text-center type-[600_10px/12px] tracking-wide text-secondary uppercase">{label}</span>
+      {/* Two lines kept for every label, so knobs in a row line up. */}
+      {!compact && (
+        <span className="line-clamp-2 flex min-h-6 max-w-full items-start justify-center text-center type-[600_10px/12px] tracking-wide text-secondary uppercase">
+          {label}
+        </span>
+      )}
     </div>
   );
 }
@@ -211,15 +232,19 @@ export function LedButton({
 export function Strip({
   title,
   detail,
-  on,
+  on = true,
   onToggle,
+  buttons,
   children,
   wide,
 }: {
   title: string;
   detail: string;
-  on: boolean;
-  onToggle: (on: boolean) => void;
+  on?: boolean;
+  /** Without it the strip has no power button (always on). */
+  onToggle?: (on: boolean) => void;
+  /** Push buttons under the description (modes, extras). */
+  buttons?: ReactNode;
   children?: ReactNode;
   wide?: boolean;
 }) {
@@ -230,10 +255,17 @@ export function Strip({
     >
       <header className="mb-2 flex items-center justify-between gap-2">
         <span className="min-w-0 truncate type-[700_12px/16px] tracking-wide text-primary uppercase">{title}</span>
-        <LedButton on={on} onToggle={onToggle} label={title} />
+        {onToggle ? <LedButton on={on} onToggle={onToggle} label={title} /> : <span className="h-7" />}
       </header>
-      <p className="mb-2 type-[500_11px/14px] text-secondary">{detail}</p>
-      {children && <div className={`flex flex-wrap justify-center gap-x-1 gap-y-3 transition-opacity ${on ? '' : 'opacity-45'}`}>{children}</div>}
+      <p className="mb-3 type-[500_11px/14px] text-secondary">{detail}</p>
+      {buttons && <div className="mb-3 flex flex-wrap justify-center gap-1.5">{buttons}</div>}
+      {children && (
+        <div
+          className={`mt-auto transition-opacity ${wide ? '' : 'grid grid-cols-[repeat(auto-fit,64px)] justify-center gap-x-1 gap-y-3'} ${on ? '' : 'opacity-45'}`}
+        >
+          {children}
+        </div>
+      )}
     </section>
   );
 }
