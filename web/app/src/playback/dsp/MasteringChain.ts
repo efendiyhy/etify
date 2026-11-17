@@ -8,7 +8,7 @@ import { BAND_COUNT, type MasteringSettings } from './types';
  *
  * Signal flow (wet path, in order):
  *
- *   input ─┬─► pitch shifter ─► karaoke (voice out) ─► preamp ─► 12-band PEQ ─► 3-band multiband compressor (LR4 crossovers)
+ *   input ─┬─► pitch shifter ─► karaoke (voice out) ─► headphone correction ─► preamp ─► 12-band PEQ ─► 3-band multiband compressor (LR4 crossovers)
  *          │      └─► (solo: band-pass audition)
  *          │   ─► [dry + harmonic exciter + psychoacoustic bass] ─► M/S widener with bass mono
  *          │   ─► virtual surround ─► 8D rotation ─► headphone crossfeed ─► balance ─► auto gain ─► brickwall limiter ─► soft clipper ─► wet
@@ -144,6 +144,11 @@ export class MasteringChain {
   private readonly kCut: GainNode;
   private readonly vibeRoom: ConvolverNode;
   private readonly vibeRoomGain: GainNode;
+  private readonly hpIn: GainNode;
+  private readonly hpDirect: GainNode;
+  private readonly hpWet: GainNode;
+  private hpNodes: BiquadFilterNode[] = [];
+  private hpKey = '';
   private readonly rotDirect: GainNode;
   private readonly rotWet: GainNode;
   private readonly rotOsc: OscillatorNode[];
@@ -264,8 +269,19 @@ export class MasteringChain {
     kOut.connect(vibeOut);
     this.vibeRoomGain.connect(vibeOut);
 
+    // ---- Headphone correction (AutoEQ): its own filters, switched as a whole ----------
+    this.hpIn = gain(1);
+    this.hpDirect = gain(1);
+    this.hpWet = gain(0);
+    vibeOut.connect(this.hpDirect);
+    vibeOut.connect(this.hpIn);
+    this.hpIn.connect(this.hpWet);
+    const hpMix = gain(1);
+    this.hpDirect.connect(hpMix);
+    this.hpWet.connect(hpMix);
+
     this.preamp = gain(1);
-    vibeOut.connect(this.preamp);
+    hpMix.connect(this.preamp);
     for (let i = 0; i <= BAND_COUNT; i++) this.joints.push(gain());
     this.preamp.connect(this.joints[0]!);
     for (let i = 0; i < BAND_COUNT; i++) {
@@ -514,6 +530,21 @@ export class MasteringChain {
     });
 
     const { comp, exciter, bass, stereo, crossfeed, limiter, surround, eightD, vibe, karaoke } = settings;
+
+    const hp = settings.headphone;
+    const hpKey = hp ? JSON.stringify(hp.bands) : '';
+    if (hpKey !== this.hpKey) {
+      // New correction: rebuild its filters between hpIn and the wet gain.
+      this.hpIn.disconnect();
+      for (const node of this.hpNodes) node.disconnect();
+      this.hpNodes = (hp?.bands ?? []).filter((b) => b.on).flatMap((b) => bandSpecs(b).map((spec) => makeBiquad(this.ctx, spec)));
+      this.hpNodes.reduce<AudioNode>((prev, node) => (prev.connect(node), node), this.hpIn).connect(this.hpWet);
+      this.hpKey = hpKey;
+    }
+    const hpOn = !!hp && hp.on;
+    ramp(this.hpIn.gain, hpOn ? db2lin(hp.preampDb) : 1);
+    ramp(this.hpWet.gain, hpOn ? 1 : 0);
+    ramp(this.hpDirect.gain, hpOn ? 0 : 1);
 
     const ratio = 2 ** (vibe.pitch / 12);
     const shifting = this.pitchNode !== null && Math.abs(vibe.pitch) > 0.01;

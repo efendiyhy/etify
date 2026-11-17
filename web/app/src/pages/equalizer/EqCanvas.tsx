@@ -35,9 +35,11 @@ interface Props {
   onChange: (index: number, patch: Partial<EqBand>) => void;
   onSolo: (index: number | null) => void;
   ariaLabel: string;
+  /** The headphone correction's filters, drawn dashed (they aren't handles). */
+  correction?: EqBand[] | null;
 }
 
-export function EqCanvas({ bands, enabled, selected, solo, onSelect, onChange, onSolo, ariaLabel }: Props) {
+export function EqCanvas({ bands, enabled, selected, solo, onSelect, onChange, onSolo, ariaLabel, correction }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const drag = useRef<number | null>(null);
   // The latest props for the draw loop and the listeners, without restarting them.
@@ -51,6 +53,9 @@ export function EqCanvas({ bands, enabled, selected, solo, onSelect, onChange, o
   const curves = useMemo(() => responseDb(bands, freqs), [bands, freqs]);
   const curvesRef = useRef(curves);
   curvesRef.current = curves;
+  const correctionCurve = useMemo(() => (correction?.length ? responseDb(correction, freqs).total : null), [correction, freqs]);
+  const correctionRef = useRef(correctionCurve);
+  correctionRef.current = correctionCurve;
 
   const plotW = () => width.current - PAD.left - PAD.right;
   const plotH = HEIGHT - PAD.top - PAD.bottom;
@@ -161,6 +166,23 @@ export function EqCanvas({ bands, enabled, selected, solo, onSelect, onChange, o
         ctx.closePath();
         ctx.fillStyle = `${BAND_COLORS[sel]}33`;
         ctx.fill();
+      }
+
+      // The headphone correction, dashed amber, under the EQ's own curve.
+      const corr = correctionRef.current;
+      if (corr) {
+        ctx.beginPath();
+        for (let i = 0; i < freqs.length; i++) {
+          const x = xOf(freqs[i]!);
+          const y = yOf(Math.max(-DB_RANGE, Math.min(DB_RANGE, corr[i]!)));
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = '#ffb020';
+        ctx.lineWidth = 1.75;
+        ctx.stroke();
+        ctx.setLineDash([]);
       }
 
       // The combined curve.

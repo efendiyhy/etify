@@ -55,11 +55,23 @@ export interface MasteringSettings {
   vibe: { speed: number; pitch: number; reverb: number; lockPitch: boolean };
   /** Karaoke: the centred voice taken out ([vocal] 0–1), the bass kept. */
   karaoke: { on: boolean; vocal: number };
+  /**
+   * Headphone correction (AutoEQ), a layer of its own before the EQ: it
+   * stays when presets change, and can be switched off or removed.
+   */
+  headphone: HeadphoneCorrection | null;
   limiter: { on: boolean; ceiling: number };
   /** Left/right balance, −1 (left) to +1 (right). */
   balance: number;
   /** Matches the processed loudness to the input's, so louder doesn't pass for better. */
   autoGain: boolean;
+}
+
+export interface HeadphoneCorrection {
+  on: boolean;
+  name: string;
+  preampDb: number;
+  bands: EqBand[];
 }
 
 export const BAND_COUNT = 12;
@@ -115,6 +127,7 @@ export function defaultSettings(): MasteringSettings {
     eightD: { on: false, speed: 8, depth: 0.85 },
     vibe: { speed: 1, pitch: 0, reverb: 0, lockPitch: false },
     karaoke: { on: false, vocal: 0.9 },
+    headphone: null,
     limiter: { on: true, ceiling: -0.3 },
     autoGain: false,
     balance: 0,
@@ -198,6 +211,17 @@ export function sanitizeSettings(raw: Partial<MasteringSettings> | null | undefi
       lockPitch: raw.vibe?.lockPitch === true,
     },
     karaoke: { on: raw.karaoke?.on === true, vocal: num(raw.karaoke?.vocal, 0.9, 0, 1) },
+    headphone:
+      raw.headphone && typeof raw.headphone === 'object' && Array.isArray(raw.headphone.bands)
+        ? {
+            on: raw.headphone.on !== false,
+            name: String(raw.headphone.name ?? '').slice(0, 80),
+            preampDb: num(raw.headphone.preampDb, 0, PREAMP_MIN, PREAMP_MAX),
+            bands: raw.headphone.bands
+              .slice(0, BAND_COUNT)
+              .map((b) => sanitizeBand(b, { on: true, type: 'peaking', freq: 1000, gain: 0, q: 1, slope: 12 })),
+          }
+        : null,
     limiter: { on: raw.limiter?.on !== false, ceiling: num(raw.limiter?.ceiling, base.limiter.ceiling, -6, 0) },
     autoGain: raw.autoGain === true,
     balance: num(raw.balance, 0, -1, 1),

@@ -1,4 +1,4 @@
-import { Headphones, Loader2, Search } from 'lucide-react';
+import { Headphones, Loader2, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useT } from '@/lib/i18n';
 import { headphoneIndex, headphoneProfile, searchHeadphones, type HeadphoneEntry } from '@/playback/dsp/autoeq';
@@ -16,7 +16,7 @@ export function HeadphonePicker({ onApplied }: { onApplied: (name: string) => vo
   const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
-  const preset = useMastering((s) => s.settings.preset);
+  const headphone = useMastering((s) => s.settings.headphone);
 
   // The list loads the first time the field is used.
   useEffect(() => {
@@ -39,9 +39,7 @@ export function HeadphonePicker({ onApplied }: { onApplied: (name: string) => vo
     setBusy(entry.path);
     try {
       const text = await headphoneProfile(entry);
-      const store = useMastering.getState();
-      store.importApo(text);
-      store.savePreset(`🎧 ${entry.name}`);
+      useMastering.getState().setHeadphone(entry.name, text);
       onApplied(entry.name);
       setQuery('');
     } catch (e) {
@@ -52,15 +50,33 @@ export function HeadphonePicker({ onApplied }: { onApplied: (name: string) => vo
     }
   };
 
-  const current = preset.startsWith('🎧 ') ? preset.slice(3) : null;
+  const store = useMastering.getState();
 
   return (
-    <Strip title={t('autoeq.title')} detail={t('autoeq.detail')} wide={false} free>
+    <Strip
+      title={t('autoeq.title')}
+      detail={t('autoeq.detail')}
+      free
+      on={headphone?.on ?? true}
+      onToggle={headphone ? store.toggleHeadphone : undefined}
+    >
       <div className="flex flex-col gap-1.5">
-        {current && (
-          <span className="inline-flex items-center gap-1.5 truncate rounded-[6px] bg-key/15 px-2 py-1 type-[600_12px/16px] text-key">
-            <Headphones size={13} /> {current}
-          </span>
+        {headphone && (
+          <div
+            className={`flex items-center gap-1.5 rounded-[6px] px-2 py-1 type-[600_12px/16px] ${headphone.on ? 'bg-key/15 text-key' : 'bg-quaternary text-secondary'}`}
+          >
+            <Headphones size={13} className="flex-none" />
+            <span className="min-w-0 flex-1 truncate">{headphone.name}</span>
+            <span className="flex-none type-[500_10px/12px] opacity-80">{headphone.on ? t('autoeq.active') : t('autoeq.off')}</span>
+            <button
+              className="grid size-5 flex-none place-items-center rounded-full hover:bg-black/10"
+              aria-label={t('autoeq.remove')}
+              title={t('autoeq.remove')}
+              onClick={store.removeHeadphone}
+            >
+              <X size={13} />
+            </button>
+          </div>
         )}
         <label className="flex items-center gap-1.5 rounded-[8px] bg-quaternary px-2 py-1.5">
           <Search size={14} className="flex-none text-secondary" />

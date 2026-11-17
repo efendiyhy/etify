@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { applyPreset, fromApo, fromJson } from './presets';
-import { defaultBands, defaultSettings, sanitizeSettings, type EqBand, type MasteringSettings } from './types';
+import { defaultBands, defaultSettings, sanitizeSettings, type EqBand, type HeadphoneCorrection, type MasteringSettings } from './types';
 
 /**
  * The mastering settings as app state, kept in localStorage: the live
@@ -39,6 +39,44 @@ interface MasteringState {
   deletePreset: (name: string) => void;
   importJson: (text: string) => string;
   importApo: (text: string) => void;
+  /** Puts a headphone's correction (Equalizer APO text, from AutoEQ) in its own layer, on. */
+  setHeadphone: (name: string, text: string) => void;
+  toggleHeadphone: (on: boolean) => void;
+  removeHeadphone: () => void;
+}
+
+/** The correction in [text] (a preamp and filters), as the headphone layer. */
+function correctionFrom(name: string, text: string): HeadphoneCorrection {
+  const parsed = fromApo(text, defaultSettings());
+  return { on: true, name, preampDb: parsed.preampDb, bands: parsed.bands.filter((b) => b.on) };
+}
+
+/** The headphone layer belongs to the listener's ears, not to a preset: presets keep it. */
+const keepHeadphone = (next: MasteringSettings, current: MasteringSettings): MasteringSettings => ({ ...next, headphone: current.headphone });
+
+/**
+ * Earlier, a headphone correction was saved as a preset "🎧 name" over the
+ * EQ bands. Those move to the headphone layer; the presets go.
+ */
+function migrateHeadphonePresets(saved: Saved): Saved {
+  const marked = (name: string) => name.startsWith('🎧 ');
+  if (!saved.custom.some((p) => marked(p.name)) && !marked(saved.settings.preset)) return saved;
+  let settings = saved.settings;
+  if (marked(settings.preset) && !settings.headphone) {
+    settings = {
+      ...defaultSettings(),
+      enabled: settings.enabled,
+      preset: 'flat',
+      headphone: {
+        on: true,
+        name: settings.preset.slice(3),
+        preampDb: settings.preampDb,
+        // Only the filters that do something (the unused bands are flat bells).
+        bands: settings.bands.filter((b) => b.on && (b.gain !== 0 || b.type === 'highpass' || b.type === 'lowpass' || b.type === 'notch')),
+      },
+    };
+  }
+  return { ...saved, settings, custom: saved.custom.filter((p) => !marked(p.name)) };
 }
 
 const KEY = 'etify:mastering';
@@ -77,6 +115,10 @@ function migrateLegacy(): MasteringSettings | null {
 }
 
 function load(): Saved {
+  return migrateHeadphonePresets(loadRaw());
+}
+
+function loadRaw(): Saved {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Partial<Saved> | null;
     if (raw?.settings) {
@@ -121,11 +163,11 @@ export const useMastering = create<MasteringState>()((set, get) => {
       edit((s) => ({ ...s, enabled: true, preset: 'custom', bands: s.bands.map((b, i) => (i === index ? { ...b, ...patch } : b)) })),
     setPreset: (id) => {
       const custom = get().custom.find((p) => p.name === id);
-      if (custom) return edit(() => ({ ...custom.settings, enabled: true, preset: custom.name }));
+      if (custom) return edit((s) => keepHeadphone({ ...custom.settings, enabled: true, preset: custom.name }, s));
       const next = applyPreset(get().settings, id);
-      if (next) edit(() => next);
+      if (next) edit((s) => keepHeadphone(next, s));
     },
-    reset: () => edit((s) => ({ ...defaultSettings(), enabled: s.enabled })),
+    reset: () => edit((s) => ({ ...defaultSettings(), enabled: s.enabled, headphone: s.headphone })),
     setBypass: (bypass) => set({ bypass }),
     setSolo: (solo) => set({ solo }),
     switchSlot: () => {
@@ -140,14 +182,21 @@ export const useMastering = create<MasteringState>()((set, get) => {
       const settings = { ...get().settings, preset: clean };
       commit({ settings, custom: [...get().custom.filter((p) => p.name !== clean), { name: clean, settings }] });
     },
-    deletePreset: (name) => commit({ custom: get().custom.filter((p) => p.name !== name) }),
+    deletePreset: (name) => {
+      const { settings, custom } = get();
+      // The deleted preset's sound stays, as Custom.
+      commit({ custom: custom.filter((p) => p.name !== name), settings: settings.preset === name ? { ...settings, preset: 'custom' } : settings });
+    },
     importJson: (text) => {
       const { name, settings } = fromJson(text);
       const clean = name.trim().slice(0, 40) || 'Imported';
-      const imported = { ...settings, enabled: true, preset: clean };
+      const imported = { ...settings, enabled: true, preset: clean, headphone: get().settings.headphone };
       commit({ settings: imported, custom: [...get().custom.filter((p) => p.name !== clean), { name: clean, settings: imported }] });
       return clean;
     },
     importApo: (text) => edit((s) => fromApo(text, s)),
+    setHeadphone: (name, text) => edit((s) => ({ ...s, enabled: true, headphone: correctionFrom(name, text) })),
+    toggleHeadphone: (on) => edit((s) => (s.headphone ? { ...s, enabled: s.enabled || on, headphone: { ...s.headphone, on } } : s)),
+    removeHeadphone: () => edit((s) => ({ ...s, headphone: null })),
   };
 });

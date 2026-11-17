@@ -381,9 +381,15 @@ export default function EqualizerPage() {
                 onChange={store.setBand}
                 onSolo={store.setSolo}
                 ariaLabel={t('eq.curve')}
+                correction={settings.headphone?.on ? settings.headphone.bands : null}
               />
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 pb-1 type-[500_11px/14px] text-tertiary">
+              {settings.headphone?.on && (
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-0 w-4 border-t-2 border-dashed border-[#ffb020]" /> {t('autoeq.curve')}
+                </span>
+              )}
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-2 w-4 rounded-sm bg-key/20" /> {t('eq.spectrumPre')}
               </span>
