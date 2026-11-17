@@ -1,3 +1,4 @@
+import { trackContextMenu } from '@/components/ContextMenu';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useEffect, useRef, useState } from 'react';
 import { PrefetchLink } from '@/components/PrefetchLink';
@@ -107,6 +108,7 @@ function Row({ track, variant, position, fallbackArtwork, onPlayRow }: RowProps)
       data-unavailable={unavailable}
       title={unavailable === 'matching' ? 'Looking for this on YouTube Music…' : unavailable === 'missing' ? 'Not found on YouTube Music' : undefined}
       onDoubleClick={onPlay}
+      onContextMenu={trackContextMenu(track)}
     >
       <div className={`${cell} gap-3`}>
         <div className={`relative grid w-10 shrink-0 place-items-center${variant === 'playlist' ? ' ms-[7px]' : ''}`}>

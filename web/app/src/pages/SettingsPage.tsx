@@ -14,7 +14,7 @@ import { AUTOMIX_BARS } from '@/playback/automix/choices';
 import { greetingKey } from '@/lib/greeting';
 import { LANGUAGES, useLanguage, useT, type Lang, type Translate } from '@/lib/i18n';
 import { useVisualizer } from '@/playback/analyser';
-import { useEqualizer, EQ_PRESETS } from '@/playback/equalizer';
+import { presetLabel, useMastering } from '@/playback/equalizer';
 import { useAppearance, type ThemePref } from '@/state/appearance';
 import { CROSSFADE_CHOICES, usePlayer } from '@/state/player';
 import { NICKNAME_MAX, useProfile } from '@/state/profile';
@@ -79,10 +79,10 @@ export default function SettingsPage() {
   const setLang = useLanguage((s) => s.setLang);
   const theme = useAppearance((s) => s.theme);
   const setTheme = useAppearance((s) => s.setTheme);
-  const eqEnabled = useEqualizer((s) => s.enabled);
+  const eqEnabled = useMastering((s) => s.settings.enabled);
   const vizEnabled = useVisualizer((s) => s.enabled);
   const setVizEnabled = useVisualizer((s) => s.setEnabled);
-  const eqPreset = useEqualizer((s) => s.preset);
+  const eqPreset = useMastering((s) => s.settings.preset);
   const setNickname = useProfile((s) => s.setNickname);
   const present = extension.state === 'present';
   const discordText =
@@ -202,7 +202,7 @@ export default function SettingsPage() {
             to="/settings/equalizer"
             icon={<Glyph Icon={SlidersHorizontal} color="#8b6cf0" />}
             title={t('settings.equalizer')}
-            value={eqEnabled ? (EQ_PRESETS.find((p) => p.id === eqPreset)?.name[lang] ?? t('eq.custom')) : t('common.off')}
+            value={eqEnabled ? presetLabel(eqPreset, lang, t('eq.custom')) : t('common.off')}
           />
           <Toggle label={t('viz.title')} detail={t('viz.detail')} checked={vizEnabled} onChange={setVizEnabled} />
           <Toggle

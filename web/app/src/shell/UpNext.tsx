@@ -1,3 +1,4 @@
+import { trackContextMenu } from '@/components/ContextMenu';
 import { party, useParty } from '@/party/listenTogether';
 import { Infinity as InfinityIcon, MoreHorizontal, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
@@ -57,6 +58,7 @@ function Row({
         onDropAt(at);
       }}
       onDoubleClick={() => jumpTo(at)}
+      onContextMenu={trackContextMenu(track)}
     >
       <div className="relative size-10">
         <Artwork src={track.thumbnail} displayWidth={40} radius="var(--radius-artwork-small)" />

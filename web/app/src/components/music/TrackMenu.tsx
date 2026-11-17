@@ -78,7 +78,7 @@ function AccountItems({ track, onClose, onPlaylists }: { track: Track; onClose: 
   );
 }
 
-function TrackMenuItems({ track, onClose }: { track: Track; onClose: () => void }) {
+export function TrackMenuItems({ track, onClose }: { track: Track; onClose: () => void }) {
   const t = useT();
   const [view, setView] = useState<'main' | 'playlists'>('main');
   const signedIn = useSignedIn();

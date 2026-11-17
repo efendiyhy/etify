@@ -4,7 +4,7 @@ import { Visualizer } from './Visualizer';
 import { useState } from 'react';
 import { PrefetchLink } from '@/components/PrefetchLink';
 import { useT } from '@/lib/i18n';
-import { useEqualizer } from '@/playback/equalizer';
+import { useMastering } from '@/playback/equalizer';
 import {
   BackwardIcon,
   ForwardIcon,
@@ -49,7 +49,7 @@ export function PlayerBar() {
   const repeat = usePlayer((s) => s.repeat);
   const { togglePlay, next, previous, toggleShuffle, cycleRepeat } = usePlayer.getState();
   const [volumeOpen, setVolumeOpen] = useState(false);
-  const eqOn = useEqualizer((s) => s.enabled);
+  const eqOn = useMastering((s) => s.settings.enabled);
   const t = useT();
 
   return (

@@ -1,3 +1,4 @@
+import { linkContextMenu, trackContextMenu } from '@/components/ContextMenu';
 import { PrefetchLink } from '@/components/PrefetchLink';
 import { PlayIcon } from '@/components/icons/Transport';
 import type { MusicItem } from '@/data/music/types';
@@ -8,6 +9,13 @@ import { playTrack, toTrack } from './play';
 import { TrackMenu } from './TrackMenu';
 
 const isPlayable = (item: MusicItem) => item.kind === 'song' || item.kind === 'video';
+
+/** The right-click menu for an item: a song's menu, or Open/Copy link for the rest. */
+function onItemContextMenu(item: MusicItem) {
+  if (isPlayable(item)) return trackContextMenu(toTrack(item));
+  const href = hrefFor(item);
+  return href ? linkContextMenu(item.title, href) : undefined;
+}
 
 /* Lockups (report §2). */
 // A card: on hover its own panel shows behind it and the play button rises into the artwork's corner.
@@ -85,7 +93,7 @@ function LockupArtwork({ item, width, aspect }: { item: MusicItem; width: number
 export function SquareLockup({ item, width = 220 }: { item: MusicItem; width?: number }) {
   const href = hrefFor(item);
   return (
-    <div className={lockup}>
+    <div className={lockup} onContextMenu={onItemContextMenu(item)}>
       <LockupArtwork item={item} width={width} aspect={1} />
       <div className={caption}>
         <div className={title}>
@@ -109,7 +117,7 @@ export function SquareLockup({ item, width = 220 }: { item: MusicItem; width?: n
 /** 16:9 video lockup (report §2, type C). */
 export function VideoLockup({ item, width = 300 }: { item: MusicItem; width?: number }) {
   return (
-    <div className={lockup}>
+    <div className={lockup} onContextMenu={onItemContextMenu(item)}>
       <LockupArtwork item={item} width={width} aspect={16 / 9} />
       <div className={caption}>
         <div className={title}>
@@ -125,7 +133,7 @@ export function VideoLockup({ item, width = 300 }: { item: MusicItem; width?: nu
 /** Circular artist lockup (report §2, type H). */
 export function CircleLockup({ item, width = 160 }: { item: MusicItem; width?: number }) {
   return (
-    <PrefetchLink to={hrefFor(item) ?? '#'} className="group/circle flex min-w-0 flex-col items-center gap-2.5">
+    <PrefetchLink to={hrefFor(item) ?? '#'} className="group/circle flex min-w-0 flex-col items-center gap-2.5" onContextMenu={onItemContextMenu(item)}>
       <Artwork src={item.thumbnail} displayWidth={width} radius="50%" />
       <span className="max-w-full truncate text-center type-body group-hover/circle:underline">{item.title}</span>
     </PrefetchLink>
@@ -137,7 +145,7 @@ export function TrackLockup({ item, onPlay }: { item: MusicItem; onPlay?: () => 
   const play = onPlay ?? (() => playTrack(item));
   return (
     // 52px art column (40 + 12 gap), content, menu; 55px tall.
-    <div className="group/track grid h-[55px] grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-x-3 py-[7.5px] pr-3.5 pl-0">
+    <div onContextMenu={onItemContextMenu(item)} className="group/track grid h-[55px] grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-x-3 py-[7.5px] pr-3.5 pl-0">
       <button className="group/art relative w-10 rounded-artwork-sm" aria-label={`Play ${item.title}`} onClick={play}>
         <Artwork src={item.thumbnail} displayWidth={40} radius="var(--radius-artwork-small)" />
         <span

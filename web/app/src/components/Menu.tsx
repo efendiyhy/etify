@@ -12,6 +12,8 @@ interface MenuProps {
   label: string;
   /** At least as wide as the anchor (a pop-up button's menu). */
   matchWidth?: boolean;
+  /** Opens at this point instead (a right-click), kept inside the window. */
+  point?: { x: number; y: number };
   children: ReactNode;
 }
 
@@ -20,11 +22,19 @@ interface MenuProps {
  * items, hairline separators, red for destructive items. Closes on Escape, a
  * click outside, or a scroll of the page under it.
  */
-export function Menu({ anchor, placement = 'below-end', onClose, label, matchWidth, children }: MenuProps) {
+export function Menu({ anchor, placement = 'below-end', onClose, label, matchWidth, point, children }: MenuProps) {
   const panel = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<React.CSSProperties>({ visibility: 'hidden' });
 
   useLayoutEffect(() => {
+    if (point) {
+      const box = panel.current!.getBoundingClientRect();
+      const margin = 8;
+      const left = point.x + box.width + margin > window.innerWidth ? Math.max(margin, point.x - box.width) : point.x;
+      const top = point.y + box.height + margin > window.innerHeight ? Math.max(margin, point.y - box.height) : point.y;
+      setPosition({ left, top, maxHeight: window.innerHeight - top - margin });
+      return;
+    }
     const rect = anchor.getBoundingClientRect();
     const gap = 6;
     const width = matchWidth ? { minWidth: rect.width } : {};
@@ -41,7 +51,7 @@ export function Menu({ anchor, placement = 'below-end', onClose, label, matchWid
               ...width,
             },
     );
-  }, [anchor, placement, matchWidth]);
+  }, [anchor, placement, matchWidth, point]);
 
   useEffect(() => {
     panel.current?.querySelector<HTMLElement>('[role^="menuitem"]')?.focus({ preventScroll: true });

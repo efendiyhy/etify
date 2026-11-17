@@ -1,3 +1,4 @@
+import { linkContextMenu, trackContextMenu } from '@/components/ContextMenu';
 import { ArrowUpRight, Library, ListMusic, PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { MdOutlineExtension } from 'react-icons/md';
@@ -94,6 +95,7 @@ function RecentlyPlayed({ narrow, onNavigate }: { narrow: boolean; onNavigate: (
                 title={narrow ? `${track.title} · ${artist}` : undefined}
                 aria-label={`Play ${track.title}`}
                 onClick={() => playList(tracks, i, { source: RECENT_SOURCE })}
+                onContextMenu={trackContextMenu(track)}
               >
                 <span className="w-12 flex-none overflow-hidden rounded-[6px]">
                   <Artwork src={track.thumbnail} displayWidth={48} radius="6px" />
@@ -133,7 +135,7 @@ function PlaylistRow({
 }) {
   return (
     <li>
-      <PrefetchNavLink to={to} end={end} className={narrow ? railItem : item} title={narrow ? name : undefined} aria-label={narrow ? name : undefined} onClick={onNavigate}>
+      <PrefetchNavLink to={to} end={end} className={narrow ? railItem : item} title={narrow ? name : undefined} aria-label={narrow ? name : undefined} onClick={onNavigate} onContextMenu={linkContextMenu(name, to)}>
         <span className={tile}>{all ? <AllPlaylistsIcon size={24} /> : <ListMusic size={20} strokeWidth={1.8} />}</span>
         {!narrow && (
           <span className="flex min-w-0 flex-col">

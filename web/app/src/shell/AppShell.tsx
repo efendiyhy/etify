@@ -5,6 +5,7 @@ import { useDiscordPresence } from '@/playback/discordPresence';
 import { startHistoryReporting } from '@/playback/historyReporting';
 import { startLivePresence } from '@/playback/livePresence';
 import { Outlet } from 'react-router';
+import { ContextMenuHost } from '@/components/ContextMenu';
 import { PrefetchLink } from '@/components/PrefetchLink';
 import { config } from '@/config';
 import { useExtension } from '@/extension/useExtension';
@@ -108,6 +109,7 @@ export function AppShell() {
       <PlayerBar />
       {banner}
       <ShortcutsDialog />
+      <ContextMenuHost />
       {fullScreen && (
         <Suspense fallback={null}>
           <FullScreenPlayer />

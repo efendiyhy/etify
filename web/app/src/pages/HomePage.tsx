@@ -1,3 +1,4 @@
+import { trackContextMenu } from '@/components/ContextMenu';
 import { useEffect, useRef } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { PlayIcon } from '@/components/icons/Transport';
@@ -45,6 +46,7 @@ function QuickPicks({ tracks }: { tracks: Track[] }) {
           <button
             className="group/quick flex h-16 w-full items-center gap-3 overflow-hidden rounded-md bg-quinary pr-2 text-start transition-colors hover:bg-quaternary"
             onClick={() => playList(tracks, i, { source: RECENT_SOURCE })}
+            onContextMenu={trackContextMenu(track)}
           >
             <span className="w-16 flex-none shadow-[4px_0_12px_rgb(0_0_0/0.25)]">
               <Artwork src={track.thumbnail} displayWidth={64} radius="0" />

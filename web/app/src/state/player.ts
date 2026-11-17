@@ -1,6 +1,6 @@
 import type { DetectedExtension } from '@etify/shared/bridge';
 import { tapAnalyser, useVisualizer } from '@/playback/analyser';
-import { attachEqualizer, useEqualizer } from '@/playback/equalizer';
+import { attachEqualizer, useMastering } from '@/playback/equalizer';
 import { create } from 'zustand';
 import type { Track } from '@/data/music/types';
 import { extensionQueryKey } from '@/extension/useExtension';
@@ -368,14 +368,14 @@ function automixHandoff() {
  * page). Off, the graph's equaliser passes the sound through unchanged.
  */
 function syncEqualizer() {
-  if (!(useEqualizer.getState().enabled || useVisualizer.getState().enabled) || !decks) return;
+  if (!(useMastering.getState().settings.enabled || useVisualizer.getState().enabled) || !decks) return;
   void ensureAutomix().then((g) => {
     if (g) void g.ctx.resume();
   });
 }
 
-useEqualizer.subscribe((state, previous) => {
-  if (state.enabled && !previous.enabled) syncEqualizer();
+useMastering.subscribe((state, previous) => {
+  if (state.settings.enabled && !previous.settings.enabled) syncEqualizer();
 });
 useVisualizer.subscribe((state, previous) => {
   if (state.enabled && !previous.enabled) syncEqualizer();
