@@ -1,6 +1,7 @@
 import { PictureInPicture2, SlidersHorizontal } from 'lucide-react';
 import { miniPlayerSupported, openMiniPlayer } from './MiniPlayerWindow';
 import { Visualizer } from './Visualizer';
+import { KaraokeButton, NightMenu } from './NightMenu';
 import { useState } from 'react';
 import { PrefetchLink } from '@/components/PrefetchLink';
 import { useT } from '@/lib/i18n';
@@ -116,6 +117,8 @@ export function PlayerBar() {
         <PrefetchLink to="/settings/equalizer" className={fading} aria-label={t('eq.title')} title={t('eq.title')} aria-pressed={eqOn}>
           <SlidersHorizontal size={17} strokeWidth={2} />
         </PrefetchLink>
+        <KaraokeButton className={fading} />
+        <NightMenu className={fading} />
         {miniPlayerSupported() && (
           <button className={fading} aria-label={t('mini.open')} title={t('mini.open')} onClick={() => void openMiniPlayer()}>
             <PictureInPicture2 size={17} strokeWidth={2} />

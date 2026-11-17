@@ -207,6 +207,7 @@ function getDecks(): Promise<Deck[]> {
     });
     applyVolumes();
     syncEqualizer();
+    applySpeed();
     // For browser-driven tests: the elements aren't in the DOM.
     if (import.meta.env.DEV) Object.defineProperty(window, '__bcAudio', { get: getAudio, configurable: true });
     return decks;
@@ -214,9 +215,23 @@ function getDecks(): Promise<Deck[]> {
   return decksPromise;
 }
 
+/**
+ * Temporary turn-downs on top of the user's volume, by who asked: the sleep
+ * timer's fade, the DJ talking over the intro. They multiply.
+ */
+const outputScale = new Map<string, number>();
+
+/** Scales the output for [key] (1 removes it); the volume setting itself stays. */
+export function setOutputScale(key: string, value: number): void {
+  if (value >= 1) outputScale.delete(key);
+  else outputScale.set(key, Math.max(0, value));
+  applyVolumes();
+}
+
 function applyVolumes() {
   const { volume, muted } = usePlayer.getState();
-  const level = muted ? 0 : Math.min(1, Math.max(0, volume));
+  let level = muted ? 0 : Math.min(1, Math.max(0, volume));
+  for (const scale of outputScale.values()) level *= scale;
   if (graph) {
     // Routed through Web Audio: the elements stay at 1 and the graph carries volume and the fade.
     const now = graph.ctx.currentTime;
@@ -284,6 +299,7 @@ function ensureAutomix(): Promise<AutomixGraph | null> {
         hold: (on) => {
           holding = on;
           usePlayer.setState(on ? { status: 'playing', mixing: true } : { mixing: false });
+          if (!on) applySpeed();
         },
         finished: () => {
           void all[1 - active]!.engine.stop().catch(() => {});
@@ -376,7 +392,23 @@ function syncEqualizer() {
 
 useMastering.subscribe((state, previous) => {
   if (state.settings.enabled && !previous.settings.enabled) syncEqualizer();
+  if (state.settings.vibe !== previous.settings.vibe || state.settings.enabled !== previous.settings.enabled) applySpeed();
 });
+
+/**
+ * Slowed + Reverb and Nightcore: the elements' playback rate. The pitch
+ * follows the speed, as on a record, unless the vibe locks it. Left alone
+ * while an AutoMix blend holds the decks (it beat-matches with the rate).
+ */
+function applySpeed() {
+  if (!decks || holding) return;
+  const { settings } = useMastering.getState();
+  const rate = settings.enabled ? settings.vibe.speed : 1;
+  for (const deck of decks) {
+    deck.audio.preservesPitch = rate === 1 || settings.vibe.lockPitch;
+    if (Math.abs(deck.audio.playbackRate - rate) > 1e-3) deck.audio.playbackRate = rate;
+  }
+}
 useVisualizer.subscribe((state, previous) => {
   if (state.enabled && !previous.enabled) syncEqualizer();
 });
@@ -1027,7 +1059,11 @@ function bindElement(deck: Deck, n: number) {
     if (usePlayer.getState().status === 'error' && status !== 'playing') return;
     usePlayer.setState({ status });
   };
-  element.addEventListener('playing', () => set('playing'));
+  element.addEventListener('playing', () => {
+    set('playing');
+    // A new stream starts at its own rate: bring the vibe's back.
+    applySpeed();
+  });
   element.addEventListener('pause', () => {
     if (!element.ended) set('paused');
   });

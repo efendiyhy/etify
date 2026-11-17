@@ -47,6 +47,14 @@ export interface MasteringSettings {
   surround: { on: boolean; amount: number; size: number; depth: number };
   /** 8D audio: the sound circles the listener (HRTF); [speed] is seconds per turn, [depth] 0–1 the mix. */
   eightD: { on: boolean; speed: number; depth: number };
+  /**
+   * Slowed + Reverb, Nightcore and friends: [speed] is the playback rate
+   * (0.5–1.5, with the pitch following it unless [lockPitch]), [pitch] a
+   * further shift in semitones (also the karaoke key), [reverb] 0–1.
+   */
+  vibe: { speed: number; pitch: number; reverb: number; lockPitch: boolean };
+  /** Karaoke: the centred voice taken out ([vocal] 0–1), the bass kept. */
+  karaoke: { on: boolean; vocal: number };
   limiter: { on: boolean; ceiling: number };
   /** Left/right balance, −1 (left) to +1 (right). */
   balance: number;
@@ -105,6 +113,8 @@ export function defaultSettings(): MasteringSettings {
     crossfeed: { on: false, amount: 0.3 },
     surround: { on: false, amount: 0.3, size: 0.5, depth: 0.5 },
     eightD: { on: false, speed: 8, depth: 0.85 },
+    vibe: { speed: 1, pitch: 0, reverb: 0, lockPitch: false },
+    karaoke: { on: false, vocal: 0.9 },
     limiter: { on: true, ceiling: -0.3 },
     autoGain: false,
     balance: 0,
@@ -181,6 +191,13 @@ export function sanitizeSettings(raw: Partial<MasteringSettings> | null | undefi
       speed: num(raw.eightD?.speed, base.eightD.speed, 2, 30),
       depth: num(raw.eightD?.depth, base.eightD.depth, 0, 1),
     },
+    vibe: {
+      speed: num(raw.vibe?.speed, 1, 0.5, 1.5),
+      pitch: num(raw.vibe?.pitch, 0, -12, 12),
+      reverb: num(raw.vibe?.reverb, 0, 0, 1),
+      lockPitch: raw.vibe?.lockPitch === true,
+    },
+    karaoke: { on: raw.karaoke?.on === true, vocal: num(raw.karaoke?.vocal, 0.9, 0, 1) },
     limiter: { on: raw.limiter?.on !== false, ceiling: num(raw.limiter?.ceiling, base.limiter.ceiling, -6, 0) },
     autoGain: raw.autoGain === true,
     balance: num(raw.balance, 0, -1, 1),

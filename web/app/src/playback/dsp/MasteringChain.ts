@@ -8,7 +8,7 @@ import { BAND_COUNT, type MasteringSettings } from './types';
  *
  * Signal flow (wet path, in order):
  *
- *   input ─┬─► preamp ─► 12-band PEQ ─► 3-band multiband compressor (LR4 crossovers)
+ *   input ─┬─► pitch shifter ─► karaoke (voice out) ─► preamp ─► 12-band PEQ ─► 3-band multiband compressor (LR4 crossovers)
  *          │      └─► (solo: band-pass audition)
  *          │   ─► [dry + harmonic exciter + psychoacoustic bass] ─► M/S widener with bass mono
  *          │   ─► virtual surround ─► 8D rotation ─► headphone crossfeed ─► balance ─► auto gain ─► brickwall limiter ─► soft clipper ─► wet
@@ -137,6 +137,13 @@ export class MasteringChain {
   private readonly surRoomGain: GainNode;
   private readonly surDirect: GainNode;
   private surSize = -1;
+  private readonly pitchDirect: GainNode;
+  private readonly pitchWet: GainNode;
+  private pitchNode: AudioWorkletNode | null = null;
+  private readonly kOrig: GainNode;
+  private readonly kCut: GainNode;
+  private readonly vibeRoom: ConvolverNode;
+  private readonly vibeRoomGain: GainNode;
   private readonly rotDirect: GainNode;
   private readonly rotWet: GainNode;
   private readonly rotOsc: OscillatorNode[];
@@ -194,8 +201,71 @@ export class MasteringChain {
     this.input.connect(this.preAnalyser);
 
     // ---- Preamp and the twelve bands, between joints ------------------------------
+    // ---- Pitch shifter (AudioWorklet, loaded in the background) --------------------
+    const pitchOut = new GainNode(ctx, { gain: 1, channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'speakers' });
+    this.pitchDirect = gain(1);
+    this.pitchWet = gain(0);
+    chain(this.input, this.pitchDirect, pitchOut);
+    this.pitchWet.connect(pitchOut);
+    void ctx.audioWorklet
+      ?.addModule(new URL('./pitch-worklet.js', import.meta.url))
+      .then(() => {
+        const node = new AudioWorkletNode(ctx, 'etify-pitch-shifter', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2] });
+        this.input.connect(node);
+        node.connect(this.pitchWet);
+        this.pitchNode = node;
+        if (this.settings) this.apply(this.settings, !this.active && this.settings.enabled);
+      })
+      .catch(() => {
+        // No worklets here (an old browser): the key stays where it is.
+      });
+
+    // ---- Karaoke: the centre (where the voice sits) cancelled, the bass kept --------
+    const kOut = new GainNode(ctx, { gain: 1, channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'speakers' });
+    this.kOrig = gain(1);
+    this.kCut = gain(0);
+    chain(pitchOut, this.kOrig, kOut);
+    const kSplit = new ChannelSplitterNode(ctx, { numberOfOutputs: 2 });
+    pitchOut.connect(kSplit);
+    const kSide = gain(1);
+    const kL = gain(0.5);
+    const kRNeg = gain(-0.5);
+    kSplit.connect(kL, 0);
+    kSplit.connect(kRNeg, 1);
+    kL.connect(kSide);
+    kRNeg.connect(kSide);
+    const kMid = gain(1);
+    const kLm = gain(0.5);
+    const kRm = gain(0.5);
+    kSplit.connect(kLm, 0);
+    kSplit.connect(kRm, 1);
+    kLm.connect(kMid);
+    kRm.connect(kMid);
+    const kSideNeg = gain(-1);
+    kSide.connect(kSideNeg);
+    const kMerge = new ChannelMergerNode(ctx, { numberOfInputs: 2 });
+    kSide.connect(kMerge, 0, 0);
+    kSideNeg.connect(kMerge, 0, 1);
+    const kLow = lp(160);
+    kMid.connect(kLow);
+    const kLow2 = lp(160);
+    kLow.connect(kLow2);
+    kLow2.connect(kMerge, 0, 0);
+    kLow2.connect(kMerge, 0, 1);
+    // A little of the side doubled: what's left without the voice is quieter.
+    const kMakeup = gain(1.4);
+    chain(kMerge, kMakeup, this.kCut, kOut);
+
+    // ---- Vibe reverb: a big wash for Slowed + Reverb ---------------------------------
+    this.vibeRoom = new ConvolverNode(ctx);
+    this.vibeRoomGain = gain(0);
+    chain(kOut, hp(200), this.vibeRoom, this.vibeRoomGain);
+    const vibeOut = gain(1);
+    kOut.connect(vibeOut);
+    this.vibeRoomGain.connect(vibeOut);
+
     this.preamp = gain(1);
-    this.input.connect(this.preamp);
+    vibeOut.connect(this.preamp);
     for (let i = 0; i <= BAND_COUNT; i++) this.joints.push(gain());
     this.preamp.connect(this.joints[0]!);
     for (let i = 0; i < BAND_COUNT; i++) {
@@ -443,7 +513,17 @@ export class MasteringChain {
       });
     });
 
-    const { comp, exciter, bass, stereo, crossfeed, limiter, surround, eightD } = settings;
+    const { comp, exciter, bass, stereo, crossfeed, limiter, surround, eightD, vibe, karaoke } = settings;
+
+    const ratio = 2 ** (vibe.pitch / 12);
+    const shifting = this.pitchNode !== null && Math.abs(vibe.pitch) > 0.01;
+    if (this.pitchNode) this.pitchNode.parameters.get('ratio')!.setValueAtTime(ratio, t);
+    ramp(this.pitchWet.gain, shifting ? 1 : 0);
+    ramp(this.pitchDirect.gain, shifting ? 0 : 1);
+    ramp(this.kCut.gain, karaoke.on ? karaoke.vocal : 0);
+    ramp(this.kOrig.gain, karaoke.on ? 1 - karaoke.vocal : 1);
+    if (vibe.reverb > 0 && !this.vibeRoom.buffer) this.vibeRoom.buffer = roomImpulse(this.ctx, 0.95);
+    ramp(this.vibeRoomGain.gain, vibe.reverb * 0.8);
     ramp(this.mbWet.gain, comp.on ? 1 : 0);
     ramp(this.mbBypass.gain, comp.on ? 0 : 1);
     for (const node of [...this.xover.low, ...this.xover.rest]) ramp(node.frequency, comp.lowCross);

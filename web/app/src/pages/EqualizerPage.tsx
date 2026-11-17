@@ -21,9 +21,11 @@ import {
   type Slope,
 } from '@/playback/dsp/types';
 import { getMasteringChain, useMastering } from '@/playback/equalizer';
+import { useUi } from '@/state/ui';
 import { pill } from './equalizer/controls';
 import { BAND_COLORS, EqCanvas } from './equalizer/EqCanvas';
 import { Knob, LedButton, Strip } from './equalizer/hardware';
+import { HeadphonePicker } from './equalizer/HeadphonePicker';
 import { Meters } from './equalizer/Meters';
 import { Toggle } from './IntegrationSettings';
 import { settingsUi } from './settingsStyles';
@@ -35,6 +37,18 @@ const hz = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 1 : 2)
 const hzUnit = (v: number) => `${hz(v)}${v >= 1000 ? 'Hz' : ' Hz'}`;
 const db = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)} dB`;
 const pct = (v: number) => `${Math.round(v * 100)}%`;
+const semis = (v: number) => `${v > 0 ? '+' : ''}${v % 1 === 0 ? v : v.toFixed(1)} st`;
+
+/** The vibe presets: speed (the pitch follows it, as on a turntable), extra pitch, reverb. */
+const VIBES = {
+  normal: { speed: 1, pitch: 0, reverb: 0, lockPitch: false },
+  slowed: { speed: 0.85, pitch: 0, reverb: 0.55, lockPitch: false },
+  vaporwave: { speed: 0.75, pitch: 0, reverb: 0.35, lockPitch: false },
+  spedUp: { speed: 1.15, pitch: 0, reverb: 0, lockPitch: false },
+  nightcore: { speed: 1.25, pitch: 0, reverb: 0.1, lockPitch: false },
+} satisfies Record<string, MasteringSettings['vibe']>;
+const sameVibe = (a: MasteringSettings['vibe'], b: MasteringSettings['vibe']) =>
+  Math.abs(a.speed - b.speed) < 0.005 && Math.abs(a.pitch - b.pitch) < 0.01 && Math.abs(a.reverb - b.reverb) < 0.005 && a.lockPitch === b.lockPitch;
 /** L 40 · C · R 25: how far the balance leans, in percent. */
 const balanceLabel = (v: number) => (Math.abs(v) < 0.005 ? 'C' : `${v < 0 ? 'L' : 'R'} ${Math.round(Math.abs(v) * 100)}`);
 /** Frequency knobs turn along a log scale: 0–1000 maps to 20 Hz–20 kHz. */
@@ -50,23 +64,21 @@ function download(name: string, text: string, type: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** The selected band's controls, as a channel strip of knobs. */
+/** The selected band's controls in one row: power, solo, type, slope and three knobs. */
 function BandEditor({ index, band, solo }: { index: number; band: EqBand; solo: boolean }) {
   const t = useT();
   const { setBand, setSolo } = useMastering.getState();
   const set = (patch: Partial<EqBand>) => setBand(index, patch);
   return (
-    <div className="flex flex-col gap-3 border-t border-quaternary px-4 py-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-2 type-title-3 text-primary">
-          <span className="size-3 rounded-full" style={{ background: BAND_COLORS[index] }} />
-          {t('eq.band', { n: index + 1 })}
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-quaternary px-3 py-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="grid size-6 place-items-center rounded-full type-[700_11px/1] text-black" style={{ background: BAND_COLORS[index] }}>
+          {index + 1}
         </span>
         <LedButton on={band.on} onToggle={(on) => set({ on })} label={t('eq.on')} />
         <LedButton on={solo} onToggle={(on) => setSolo(on ? index : null)} label={t('eq.solo')} tone="amber">
           {t('eq.solo')}
         </LedButton>
-        <span className="flex-1" />
         <Select<FilterType>
           label={t('eq.type')}
           value={band.type}
@@ -82,20 +94,10 @@ function BandEditor({ index, band, solo }: { index: number; band: EqBand; solo: 
           />
         )}
       </div>
-      <div className="flex flex-wrap justify-center gap-4">
+      <div className="ms-auto flex gap-1">
+        <Knob size={34} color={BAND_COLORS[index]} label={t('eq.freq')} value={toPos(band.freq)} min={0} max={1000} step={1} format={(p) => hzUnit(fromPos(p))} onChange={(p) => set({ freq: fromPos(p) })} />
         <Knob
-          size={54}
-          color={BAND_COLORS[index]}
-          label={t('eq.freq')}
-          value={toPos(band.freq)}
-          min={0}
-          max={1000}
-          step={1}
-          format={(p) => hzUnit(fromPos(p))}
-          onChange={(p) => set({ freq: fromPos(p) })}
-        />
-        <Knob
-          size={54}
+          size={34}
           color={BAND_COLORS[index]}
           label={t('eq.gain')}
           value={band.gain}
@@ -108,18 +110,7 @@ function BandEditor({ index, band, solo }: { index: number; band: EqBand; solo: 
           disabled={!hasGain(band.type)}
           onChange={(gain) => set({ gain })}
         />
-        <Knob
-          size={54}
-          color={BAND_COLORS[index]}
-          label={t('eq.q')}
-          value={band.q}
-          min={MIN_Q}
-          max={MAX_Q}
-          step={0.01}
-          reset={1.41}
-          disabled={!hasQ(band)}
-          onChange={(q) => set({ q })}
-        />
+        <Knob size={34} color={BAND_COLORS[index]} label={t('eq.q')} value={band.q} min={MIN_Q} max={MAX_Q} step={0.01} reset={1.41} disabled={!hasQ(band)} onChange={(q) => set({ q })} />
       </div>
     </div>
   );
@@ -239,7 +230,6 @@ export default function EqualizerPage() {
   const lang = useLanguage((s) => s.lang);
   const { settings, bypass, solo, slot, custom } = useMastering();
   const store = useMastering.getState();
-  const [view, setView] = useState<'graph' | 'mixer'>('graph');
   const [selected, setSelected] = useState(0);
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -274,14 +264,24 @@ export default function EqualizerPage() {
   };
 
   const band = settings.bands[selected]!;
+  const vibe = settings.vibe;
+  const vibeName = (Object.keys(VIBES) as (keyof typeof VIBES)[]).find((k) => sameVibe(VIBES[k], vibe)) ?? null;
+  const vibeOn = vibeName !== 'normal';
+  // Turning on a vibe or karaoke turns the chain on: they live in it.
+  const setVibe = (next: MasteringSettings['vibe']) => update((s) => ({ ...s, enabled: true, vibe: next }));
+  const fullScreen = useUi((s) => s.fullScreen);
+  const openKaraoke = () => {
+    update((s) => ({ ...s, enabled: true, karaoke: { ...s.karaoke, on: true } }));
+    useUi.getState().setFullScreen(true);
+  };
   const compLabels = [t('mod.low'), t('mod.mid'), t('mod.high')];
   const { exciter, bass, stereo, crossfeed, surround, eightD, limiter } = settings;
 
   return (
     // Any press on the page wakes a suspended audio context (autoplay policy).
-    <div className={`${settingsUi.centered} lg:max-w-[calc(960px+2*var(--body-gutter))]`} onPointerDown={() => void getMasteringChain()?.resume()}>
+    <div className={`${settingsUi.centered} lg:max-w-[calc(1040px+2*var(--body-gutter))]`} onPointerDown={() => void getMasteringChain()?.resume()}>
       <PageHeader title={t('eq.title')} />
-      <div className={`${settingsUi.body} lg:max-w-[960px]`}>
+      <div className={`${settingsUi.body} lg:max-w-[1040px]`}>
         <section className={settingsUi.group}>
           <Toggle label={t('eq.enable')} detail={t('eq.enableDetail')} checked={settings.enabled} onChange={store.setEnabled} />
           <label className={settingsUi.controlRow}>
@@ -368,105 +368,86 @@ export default function EqualizerPage() {
           </p>
         )}
 
-        {/* The EQ: graph or mixer. */}
-        <div className="mt-6 mb-2 flex items-center justify-between px-4">
-          <h2 className="type-subhead-emphasized text-secondary uppercase">{t('eq.bands')}</h2>
-          <div className="inline-flex overflow-hidden rounded-pill bg-quaternary" role="group">
-            {(['graph', 'mixer'] as const).map((v) => (
-              <button
-                key={v}
-                className="px-3 py-1 type-callout-emphasized text-primary aria-pressed:bg-key-bg aria-pressed:text-white"
-                aria-pressed={view === v}
-                onClick={() => setView(v)}
-              >
-                {t(v === 'graph' ? 'eq.viewGraph' : 'eq.viewMixer')}
-              </button>
-            ))}
-          </div>
+        {/* The visual first: the curve over the live spectrum, the meters beside it. */}
+        <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_260px]">
+          <section className={`${settingsUi.group} text-primary ${settings.enabled ? '' : 'opacity-70'}`}>
+            <div className="px-2 pt-2">
+              <EqCanvas
+                bands={settings.bands}
+                enabled={settings.enabled && !bypass}
+                selected={selected}
+                solo={solo}
+                onSelect={setSelected}
+                onChange={store.setBand}
+                onSolo={store.setSolo}
+                ariaLabel={t('eq.curve')}
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 pb-1 type-[500_11px/14px] text-tertiary">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-4 rounded-sm bg-key/20" /> {t('eq.spectrumPre')}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-0.5 w-4 bg-key/60" /> {t('eq.spectrumPost')}
+              </span>
+              <span>{t('eq.canvasHelp')}</span>
+            </div>
+            <BandEditor index={selected} band={band} solo={solo === selected} />
+          </section>
+          <Meters stacked labels={[compLabels[0]!, compLabels[1]!, compLabels[2]!, t('mod.limiter')]} />
         </div>
+
+        {/* Then the desk: a strip per band and the master. */}
+        <h2 className={settingsUi.sectionHeader}>{t('eq.viewMixer')}</h2>
         <section className={`${settingsUi.group} text-primary ${settings.enabled ? '' : 'opacity-70'}`}>
-          {view === 'graph' ? (
-            <>
-              <div className="px-2 pt-2">
-                <EqCanvas
-                  bands={settings.bands}
-                  enabled={settings.enabled && !bypass}
-                  selected={selected}
-                  solo={solo}
-                  onSelect={setSelected}
-                  onChange={store.setBand}
-                  onSolo={store.setSolo}
-                  ariaLabel={t('eq.curve')}
-                />
-              </div>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 pb-2 type-[500_11px/14px] text-tertiary">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-4 rounded-sm bg-key/20" /> {t('eq.spectrumPre')}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-0.5 w-4 bg-key/60" /> {t('eq.spectrumPost')}
-                </span>
-                <span>{t('eq.canvasHelp')}</span>
-              </div>
-              <div className="flex gap-1 overflow-x-auto px-4 pb-3 [scrollbar-width:none]">
-                {settings.bands.map((b, i) => (
-                  <button
-                    key={i}
-                    className="grid size-7 flex-none place-items-center rounded-full type-[700_11px/1] text-black aria-pressed:ring-2 aria-pressed:ring-primary"
-                    style={{ background: b.on ? BAND_COLORS[i] : 'var(--systemQuaternary)' }}
-                    aria-pressed={selected === i}
-                    aria-label={t('eq.band', { n: i + 1 })}
-                    onClick={() => setSelected(i)}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
-              <BandEditor index={selected} band={band} solo={solo === selected} />
-              <div className="flex flex-wrap items-center justify-center gap-4 border-t border-quaternary px-4 py-3">
-                <Knob
-                  size={54}
-                  label={`${t('eq.preamp')}${settings.autoPreamp ? ` · ${t('eq.auto')}` : ''}`}
-                  value={preamp}
-                  min={PREAMP_MIN}
-                  max={PREAMP_MAX}
-                  step={0.1}
-                  format={db}
-                  reset={0}
-                  bipolar
-                  disabled={settings.autoPreamp}
-                  onChange={(v) => update((s) => ({ ...s, preampDb: v }))}
-                />
-                <Knob
-                  size={54}
-                  label={t('mod.balance')}
-                  value={settings.balance}
-                  min={-1}
-                  max={1}
-                  step={0.01}
-                  format={balanceLabel}
-                  reset={0}
-                  bipolar
-                  onChange={(v) => update((s) => ({ ...s, balance: v }))}
-                />
-                <div className="flex max-w-[260px] flex-col items-start gap-1.5">
-                  <LedButton on={settings.autoPreamp} onToggle={(on) => update((s) => ({ ...s, autoPreamp: on }))} label={t('eq.autoPreampDetail')} tone="key">
-                    {t('eq.auto')}
-                  </LedButton>
-                  <span className="type-[500_11px/14px] text-secondary">{t('eq.autoPreampDetail')}</span>
-                </div>
-              </div>
-            </>
-          ) : (
-            <MixerView settings={settings} preamp={preamp} />
-          )}
+          <MixerView settings={settings} preamp={preamp} />
         </section>
 
-        <h2 className={settingsUi.sectionHeader}>{t('eq.meters')}</h2>
-        <Meters labels={[compLabels[0]!, compLabels[1]!, compLabels[2]!, t('mod.limiter')]} />
+        <h2 className={settingsUi.sectionHeader}>{t('fun.title')}</h2>
+        <div className="grid grid-cols-1 items-start gap-2 md:grid-cols-3">
+          <Strip
+            title={t('vibe.title')}
+            detail={t('vibe.detail')}
+            on={vibeOn}
+            onToggle={(on) => setVibe(on ? VIBES.slowed : VIBES.normal)}
+            buttons={
+              <>
+                {(Object.keys(VIBES) as (keyof typeof VIBES)[]).map((k) => (
+                  <LedButton key={k} on={vibeName === k} onToggle={() => setVibe(VIBES[k])} label={t(`vibe.${k}`)} tone="key" className="h-6 px-2">
+                    {t(`vibe.${k}`)}
+                  </LedButton>
+                ))}
+                <LedButton on={vibe.lockPitch} onToggle={(on) => setVibe({ ...vibe, lockPitch: on })} label={t('vibe.lockPitch')} tone="amber" className="h-6 px-2">
+                  {t('vibe.lockPitch')}
+                </LedButton>
+              </>
+            }
+          >
+            <Knob size={38} label={t('mod.speed')} value={vibe.speed} min={0.5} max={1.5} step={0.01} format={(v) => `${v.toFixed(2)}×`} reset={1} bipolar onChange={(v) => setVibe({ ...vibe, speed: v })} />
+            <Knob size={38} label={t('vibe.pitch')} value={vibe.pitch} min={-12} max={12} step={0.5} format={semis} reset={0} bipolar onChange={(v) => setVibe({ ...vibe, pitch: v })} />
+            <Knob size={38} label={t('vibe.reverb')} value={vibe.reverb} min={0} max={1} step={0.01} format={pct} reset={0} onChange={(v) => setVibe({ ...vibe, reverb: v })} />
+          </Strip>
+
+          <Strip
+            title={t('karaoke.title')}
+            detail={t('karaoke.detail')}
+            on={settings.karaoke.on}
+            onToggle={(on) => update((s) => ({ ...s, enabled: true, karaoke: { ...s.karaoke, on } }))}
+            buttons={
+              <LedButton on={fullScreen} onToggle={() => openKaraoke()} label={t('karaoke.open')} tone="key" className="h-6 px-2">
+                {t('karaoke.open')}
+              </LedButton>
+            }
+          >
+            <Knob size={38} label={t('karaoke.vocal')} value={settings.karaoke.vocal} min={0} max={1} step={0.01} format={pct} onChange={(v) => update((s) => ({ ...s, enabled: true, karaoke: { ...s.karaoke, vocal: v } }))} />
+            <Knob size={38} label={t('karaoke.key')} value={vibe.pitch} min={-12} max={12} step={0.5} format={semis} reset={0} bipolar onChange={(v) => setVibe({ ...vibe, pitch: v })} />
+          </Strip>
+
+          <HeadphonePicker onApplied={(name) => setNotice(t('autoeq.applied', { name }))} />
+        </div>
 
         <h2 className={settingsUi.sectionHeader}>{t('eq.mastering')}</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <Strip title={t('mod.surround')} detail={t('mod.surroundDetail')} on={surround.on} onToggle={(on) => mod('surround', { on })}>
             <Knob label={t('mod.room')} value={surround.amount} min={0} max={1} step={0.01} format={pct} onChange={(v) => mod('surround', { amount: v })} />
             <Knob label={t('mod.size')} value={surround.size} min={0} max={1} step={0.01} format={pct} onChange={(v) => mod('surround', { size: v })} />

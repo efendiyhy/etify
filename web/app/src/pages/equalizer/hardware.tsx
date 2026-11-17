@@ -54,7 +54,7 @@ export interface KnobProps {
  * raise (Shift for fine steps); or scroll, or use the
  * arrow keys; double-click resets.
  */
-export function Knob({ label, value, min, max, step = 0.1, unit = '', format, reset, bipolar, disabled, size = 46, color, compact, onChange }: KnobProps) {
+export function Knob({ label, value, min, max, step = 0.1, unit = '', format, reset, bipolar, disabled, size = 38, color, compact, onChange }: KnobProps) {
   const ref = useRef<HTMLDivElement>(null);
   const drag = useRef<{ angle: number; value: number } | null>(null);
   const live = useRef({ value, min, max, step, onChange, disabled });
@@ -97,7 +97,7 @@ export function Knob({ label, value, min, max, step = 0.1, unit = '', format, re
   const base = polar(c, c, 6, angle);
 
   return (
-    <div className={`flex flex-none flex-col items-center gap-0.5 select-none ${compact ? 'w-full' : 'w-16'} ${disabled ? 'opacity-40' : ''}`}>
+    <div className={`flex flex-none flex-col items-center gap-0.5 select-none ${compact ? 'w-full' : 'w-[58px]'} ${disabled ? 'opacity-40' : ''}`}>
       <div
         ref={ref}
         role="slider"
@@ -179,7 +179,7 @@ export function Knob({ label, value, min, max, step = 0.1, unit = '', format, re
       </span>
       {/* Two lines kept for every label, so knobs in a row line up. */}
       {!compact && (
-        <span className="line-clamp-2 flex min-h-6 max-w-full items-start justify-center text-center type-[600_10px/12px] tracking-wide text-secondary uppercase">
+        <span className="line-clamp-2 flex min-h-5 max-w-full items-start justify-center text-center type-[600_9px/10px] tracking-wide text-secondary uppercase">
           {label}
         </span>
       )}
@@ -237,6 +237,7 @@ export function Strip({
   buttons,
   children,
   wide,
+  free,
 }: {
   title: string;
   detail: string;
@@ -247,21 +248,23 @@ export function Strip({
   buttons?: ReactNode;
   children?: ReactNode;
   wide?: boolean;
+  /** Its own layout inside, not a grid of knobs. */
+  free?: boolean;
 }) {
   return (
     <section
-      className={`flex flex-col rounded-[12px] border border-quaternary bg-quinary p-3 shadow-[inset_0_1px_0_rgb(255_255_255/0.06),0_1px_2px_rgb(0_0_0/0.12)] ${wide ? 'col-span-full' : ''}`}
+      className={`flex flex-col rounded-[12px] border border-quaternary bg-quinary p-2.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.06),0_1px_2px_rgb(0_0_0/0.12)] ${wide ? 'col-span-full' : ''}`}
       title={detail}
     >
-      <header className="mb-2 flex items-center justify-between gap-2">
+      <header className="mb-1 flex items-center justify-between gap-2">
         <span className="min-w-0 truncate type-[700_12px/16px] tracking-wide text-primary uppercase">{title}</span>
         {onToggle ? <LedButton on={on} onToggle={onToggle} label={title} /> : <span className="h-7" />}
       </header>
-      <p className="mb-3 type-[500_11px/14px] text-secondary">{detail}</p>
-      {buttons && <div className="mb-3 flex flex-wrap justify-center gap-1.5">{buttons}</div>}
+      <p className="mb-2 line-clamp-1 type-[500_11px/14px] text-secondary">{detail}</p>
+      {buttons && <div className="mb-2 flex flex-wrap justify-center gap-1">{buttons}</div>}
       {children && (
         <div
-          className={`mt-auto transition-opacity ${wide ? '' : 'grid grid-cols-[repeat(auto-fit,64px)] justify-center gap-x-1 gap-y-3'} ${on ? '' : 'opacity-45'}`}
+          className={`mt-auto transition-opacity ${wide || free ? '' : 'grid grid-cols-[repeat(auto-fit,58px)] justify-center gap-x-0.5 gap-y-2'} ${on ? '' : 'opacity-45'}`}
         >
           {children}
         </div>

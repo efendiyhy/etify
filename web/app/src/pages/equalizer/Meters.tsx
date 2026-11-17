@@ -25,7 +25,7 @@ function Bar({ label, db }: { label: string; db: number }) {
 }
 
 /** Peak, true peak, loudness, correlation and gain reduction, read about 15 times a second. */
-export function Meters({ labels }: { labels: [string, string, string, string] }) {
+export function Meters({ labels, stacked }: { labels: [string, string, string, string]; /** A narrow column: the readouts one per row. */ stacked?: boolean }) {
   const t = useT();
   const [m, setM] = useState<MeterReading | null>(null);
 
@@ -44,14 +44,14 @@ export function Meters({ labels }: { labels: [string, string, string, string] })
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  if (!m) return <p className={`${settingsUi.group} px-4 py-3 type-callout text-secondary`}>{t('eq.metersIdle')}</p>;
+  if (!m) return <p className={`${settingsUi.group} h-full px-4 py-3 type-callout text-secondary`}>{t('eq.metersIdle')}</p>;
 
   const corr = Math.max(-1, Math.min(1, m.correlation));
   return (
-    <section className={`${settingsUi.group} flex flex-col gap-2.5 px-4 py-3`}>
+    <section className={`${settingsUi.group} flex h-full flex-col gap-2.5 px-4 py-3`}>
       <Bar label={`${t('eq.peak')} L`} db={m.peakL} />
       <Bar label={`${t('eq.peak')} R`} db={m.peakR} />
-      <div className="grid grid-cols-3 gap-3 pt-1 type-[500_12px/16px]">
+      <div className={`grid gap-2 pt-1 type-[500_12px/16px] ${stacked ? 'grid-cols-1' : 'grid-cols-3 gap-3'}`}>
         {(
           [
             [t('eq.truePeak'), fmt(m.truePeak, 'dBTP')],
@@ -59,7 +59,7 @@ export function Meters({ labels }: { labels: [string, string, string, string] })
             [t('eq.shortTerm'), fmt(m.shortTerm, 'LUFS')],
           ] as const
         ).map(([label, value]) => (
-          <div key={label} className="flex flex-col gap-0.5 rounded-[8px] bg-quaternary px-2.5 py-2">
+          <div key={label} className={`flex gap-0.5 rounded-[8px] bg-quaternary px-2.5 py-2 ${stacked ? 'items-baseline justify-between' : 'flex-col'}`}>
             <span className="truncate text-secondary">{label}</span>
             <span className="type-[600_15px/20px] tabular-nums text-primary">{value}</span>
           </div>
