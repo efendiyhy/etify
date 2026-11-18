@@ -311,6 +311,7 @@ export const FINISHES = {
   plum: { top: '#3b1d45', bottom: '#1c0c22', accent: '#ff7ad9' },
   midnight: { top: '#232347', bottom: '#101028', accent: '#7aa8ff' },
   bronze: { top: '#3a2e1d', bottom: '#1b150c', accent: '#ffb020' },
+  recorder: { top: '#2a1418', bottom: '#120709', accent: '#ff3b4e' },
 } satisfies Record<string, Finish>;
 
 function Screw() {

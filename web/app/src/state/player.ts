@@ -228,10 +228,27 @@ export function setOutputScale(key: string, value: number): void {
   applyVolumes();
 }
 
-function applyVolumes() {
+/** The level the graph's volume stage applies now: the volume, mute, and the temporary scales. */
+export function currentOutputLevel(): number {
   const { volume, muted } = usePlayer.getState();
   let level = muted ? 0 : Math.min(1, Math.max(0, volume));
   for (const scale of outputScale.values()) level *= scale;
+  return level;
+}
+
+/**
+ * Routes playback through Web Audio if it isn't yet (the recorder needs the
+ * mastering chain's output); false before anything has played.
+ */
+export async function ensureAudioGraph(): Promise<boolean> {
+  if (!decks) return false;
+  const built = await ensureAutomix();
+  if (built) await built.ctx.resume();
+  return built !== null;
+}
+
+function applyVolumes() {
+  const level = currentOutputLevel();
   if (graph) {
     // Routed through Web Audio: the elements stay at 1 and the graph carries volume and the fade.
     const now = graph.ctx.currentTime;

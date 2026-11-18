@@ -27,6 +27,7 @@ import { FINISHES, Knob, Lcd, LedButton, RackUnit, Section } from './equalizer/h
 import { HeadphonePickerBody } from './equalizer/HeadphonePicker';
 import { GainReductionMeters, MeterBridge } from './equalizer/Meters';
 import { PresetPicker } from './equalizer/PresetPicker';
+import { RecorderUnit } from './equalizer/RecorderUnit';
 import { settingsUi } from './settingsStyles';
 
 const TYPES: FilterType[] = ['peaking', 'lowshelf', 'highshelf', 'tilt', 'highpass', 'lowpass', 'notch'];
@@ -631,6 +632,9 @@ export default function EqualizerPage() {
                 />
               </RackUnit>
             </div>
+
+            {/* ---- REC-1: the master recorder, at the foot of the rack ---- */}
+            <RecorderUnit />
 
             <p className="px-2 pt-1 pb-0.5 text-[10.5px]/[14px] text-white/45">{t('eq.footer')}</p>
           </div>
